@@ -7,7 +7,7 @@
 
 #define TIME_STEPS 1000
 #define DELTA_T 0.01
-#define ALPHA 0.1
+#define ALPHA 0.8
 
 int size;
 double **grid;
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
     }
 
     // Set the heat source in the center
-    grid[size / 2][size / 2] = 100.0;
+    grid[size / 2][size / 2] = 500.0;
 
     // Simulate the heat equation
     for (int t = 0; t < TIME_STEPS; t++) {
