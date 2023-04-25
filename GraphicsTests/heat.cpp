@@ -1,45 +1,4 @@
-#define GL_SILENCE_DEPRECATION
-#include <GLUT/glut.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-
-#define TIME_STEPS 1000
-#define DELTA_T 0.1
-#define ALPHA 1.0
-
-int grid_size = 0;
-float **currGrid;
-float **grid0 = NULL;
-float **grid1 = NULL;
-float t = 0;
-
-int window_width = 600;
-int window_height = 600;
-
-// fire palette - found online :)
-const int numColors = 256;
-GLfloat firePalette[numColors][3] = {
-    {0.0f, 0.0f, 0.0f},       // black
-    {0.0f, 0.0f, 0.2f},       // dark blue
-    {0.0f, 0.0f, 0.5f},       // blue
-    {0.0f, 0.0f, 0.8f},       // light blue
-    {0.0f, 0.2f, 1.0f},       // lightest blue
-    {0.0f, 0.5f, 1.0f},       // cyan
-    {0.0f, 0.8f, 1.0f},       // light cyan
-    {0.2f, 1.0f, 1.0f},       // lightest cyan
-    {0.5f, 1.0f, 1.0f},       // lightest cyan
-    {0.8f, 1.0f, 1.0f},       // lightest cyan
-    {1.0f, 1.0f, 1.0f},       // white
-    {1.0f, 0.8f, 0.8f},       // lightest red
-    {1.0f, 0.5f, 0.5f},       // red
-    {1.0f, 0.2f, 0.2f},       // dark red
-    {1.0f, 0.0f, 0.0f},       // black
-    {0.8f, 0.0f, 0.0f},       // dark red
-    {0.5f, 0.0f, 0.0f},       // red
-    {0.2f, 0.0f, 0.0f},       // darkest red
-};
+#include "colorPallet.h"
 
 void allocateResources()
 {
@@ -80,10 +39,10 @@ void intializeGrid()
 void setBoundaries()
 {
     // sources & zero value areas (sinks?)
-    // currGrid[grid_size / 2][grid_size / 2] = 2.0f;
-    // currGrid[grid_size / 4][grid_size / 2] = 1.0;
-    // currGrid[grid_size / 4][grid_size / 3] = 2.0;
-    // currGrid[grid_size / 4][grid_size / 4] = 0.0f;
+    currGrid[grid_size / 2][grid_size / 2] = 8.0f;
+    currGrid[grid_size / 4][grid_size / 2] = 4.0;
+    currGrid[grid_size / 4][grid_size / 3] = 8.0;
+    currGrid[grid_size / 4][grid_size / 4] = -2.0f;
 }
 
 void simulate()
@@ -126,13 +85,14 @@ void drawGrid()
             glVertex2f(-1.0 + cell_size * i, -1.0 + cell_size * (j + 1));
             glEnd();
 
-            glColor3f(0.5, 0.5, 0.5);
-            glBegin(GL_LINE_LOOP);
-            glVertex2f(-1.0 + cell_size * i, -1.0 + cell_size * j);
-            glVertex2f(-1.0 + cell_size * (i + 1), -1.0 + cell_size * j);
-            glVertex2f(-1.0 + cell_size * (i + 1), -1.0 + cell_size * (j + 1));
-            glVertex2f(-1.0 + cell_size * i, -1.0 + cell_size * (j + 1));
-            glEnd();
+            // plot grid
+            // glColor3f(0.5, 0.5, 0.5);
+            // glBegin(GL_LINE_LOOP);
+            // glVertex2f(-1.0 + cell_size * i, -1.0 + cell_size * j);
+            // glVertex2f(-1.0 + cell_size * (i + 1), -1.0 + cell_size * j);
+            // glVertex2f(-1.0 + cell_size * (i + 1), -1.0 + cell_size * (j + 1));
+            // glVertex2f(-1.0 + cell_size * i, -1.0 + cell_size * (j + 1));
+            // glEnd();
         }
     }
 }
