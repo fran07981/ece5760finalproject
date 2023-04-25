@@ -6,22 +6,128 @@
 #include <math.h>
 
 #define TIME_STEPS 1000
-#define DELTA_T 0.01
-#define ALPHA 0.8
+#define DELTA_T 0.1
+#define ALPHA 1.0
 
-int size;
-double **grid;
+int grid_size = 0;
+float **currGrid;
+float **grid0 = NULL;
+float **grid1 = NULL;
+float t = 0;
 
-void display() {
-    glClear(GL_COLOR_BUFFER_BIT);
+int window_width = 600;
+int window_height = 600;
 
-    float cell_size = 2.0 / size;
+// fire palette - found online :)
+const int numColors = 256;
+GLfloat firePalette[numColors][3] = {
+    {0.0f, 0.0f, 0.0f},       // black
+    {0.0f, 0.0f, 0.2f},       // dark blue
+    {0.0f, 0.0f, 0.5f},       // blue
+    {0.0f, 0.0f, 0.8f},       // light blue
+    {0.0f, 0.2f, 1.0f},       // lightest blue
+    {0.0f, 0.5f, 1.0f},       // cyan
+    {0.0f, 0.8f, 1.0f},       // light cyan
+    {0.2f, 1.0f, 1.0f},       // lightest cyan
+    {0.5f, 1.0f, 1.0f},       // lightest cyan
+    {0.8f, 1.0f, 1.0f},       // lightest cyan
+    {1.0f, 1.0f, 1.0f},       // white
+    {1.0f, 0.8f, 0.8f},       // lightest red
+    {1.0f, 0.5f, 0.5f},       // red
+    {1.0f, 0.2f, 0.2f},       // dark red
+    {1.0f, 0.0f, 0.0f},       // black
+    {0.8f, 0.0f, 0.0f},       // dark red
+    {0.5f, 0.0f, 0.0f},       // red
+    {0.2f, 0.0f, 0.0f},       // darkest red
+};
 
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
-            float heat = grid[i][j] / 100.0;
-            glColor3f(heat, 0, 0);
+void allocateResources()
+{
+    if (grid0 != NULL && grid1 != NULL || grid_size == 0)
+        return;
+
+    // define two grids (rows)
+    grid0 = (float **) malloc(grid_size * sizeof(float *));
+    grid1 = (float **) malloc(grid_size * sizeof(float *));
+
+    // 2D array, so each row needs to be allocated (cols)
+    for (int i = 0; i < grid_size; i++) {
+        grid0[i] = (float *) calloc(grid_size, sizeof(float));
+        grid1[i] = (float *) calloc(grid_size, sizeof(float));
+    }
+    currGrid = grid0;
+}
+
+void freeResources()
+{
+    // free the cols
+    for (int i = 0; i < grid_size; i++) {
+        free(grid0[i]);
+        free(grid1[i]);
+    }
+
+    // freee the rows
+    free(grid0);
+    free(grid1);
+}
+
+void intializeGrid()
+{
+    // add some heat to the the center
+    currGrid[grid_size / 2][grid_size / 2] = 100.0f;
+}
+
+void setBoundaries()
+{
+    // sources & zero value areas (sinks?)
+    // currGrid[grid_size / 2][grid_size / 2] = 2.0f;
+    // currGrid[grid_size / 4][grid_size / 2] = 1.0;
+    // currGrid[grid_size / 4][grid_size / 3] = 2.0;
+    // currGrid[grid_size / 4][grid_size / 4] = 0.0f;
+}
+
+void simulate()
+{
+    setBoundaries();
+    // simulate the heat equation
+    for (int i = 1; i < grid_size - 1; i++) {
+        for (int j = 1; j < grid_size - 1; j++) {
+            grid1[i][j] = currGrid[i][j] + ALPHA * DELTA_T * 
+                (currGrid[i - 1][j] + currGrid[i + 1][j] +
+                 currGrid[i][j - 1] + currGrid[i][j + 1] 
+                                - 4 * currGrid[i][j]);
+        }
+    }
+    currGrid = grid1;
+    grid1    = grid0;
+    grid0    = currGrid;
+}
+
+void drawGrid()
+{
+    float cell_size = 2.0 / grid_size;
+
+    for (int i = 0; i < grid_size; i++) {
+        for (int j = 0; j < grid_size; j++) {
+            float heat = currGrid[i][j];
+
+            // Calculate the color index based on the temperature value
+            int colorIndex = (int)(heat * (numColors - 1));
+            colorIndex = fmax(0, fmin(numColors - 1, colorIndex));
+
+            // Set the color to the corresponding value in the fire palette
+            glColor3f(firePalette[colorIndex][0], firePalette[colorIndex][1], firePalette[colorIndex][2]);
+
+            // glColor3f(heat, 0, 0);
             glBegin(GL_QUADS);
+            glVertex2f(-1.0 + cell_size * i, -1.0 + cell_size * j);
+            glVertex2f(-1.0 + cell_size * (i + 1), -1.0 + cell_size * j);
+            glVertex2f(-1.0 + cell_size * (i + 1), -1.0 + cell_size * (j + 1));
+            glVertex2f(-1.0 + cell_size * i, -1.0 + cell_size * (j + 1));
+            glEnd();
+
+            glColor3f(0.5, 0.5, 0.5);
+            glBegin(GL_LINE_LOOP);
             glVertex2f(-1.0 + cell_size * i, -1.0 + cell_size * j);
             glVertex2f(-1.0 + cell_size * (i + 1), -1.0 + cell_size * j);
             glVertex2f(-1.0 + cell_size * (i + 1), -1.0 + cell_size * (j + 1));
@@ -29,11 +135,20 @@ void display() {
             glEnd();
         }
     }
-
-    glutSwapBuffers();
 }
 
-void init() {
+
+void display()
+{
+    simulate();
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawGrid();
+    glutSwapBuffers();
+    glutPostRedisplay();
+}
+
+void init() 
+{
     glClearColor(1.0, 1.0, 1.0, 1.0);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -41,34 +156,18 @@ void init() {
 }
 
 int main(int argc, char **argv) {
+    // get grid size parameter from user
     printf("Enter the size of the grid: ");
-    scanf("%d", &size);
+    scanf("%d", &grid_size);
 
-    grid = (double **) malloc(size * sizeof(double *));
-    double **new_grid = (double **) malloc(size * sizeof(double *));
-    for (int i = 0; i < size; i++) {
-        grid[i] = (double *) calloc(size, sizeof(double));
-        new_grid[i] = (double *) calloc(size, sizeof(double));
-    }
-
-    // Set the heat source in the center
-    grid[size / 2][size / 2] = 500.0;
-
-    // Simulate the heat equation
-    for (int t = 0; t < TIME_STEPS; t++) {
-        for (int i = 1; i < size - 1; i++) {
-            for (int j = 1; j < size - 1; j++) {
-                new_grid[i][j] = grid[i][j] + ALPHA * DELTA_T * (grid[i - 1][j] + grid[i + 1][j] + grid[i][j - 1] + grid[i][j + 1] - 4 * grid[i][j]);
-            }
-        }
-
-        memcpy(grid, new_grid, size * sizeof(double *));
-    }
-
-    // Initialize GLUT
+    // set up grid & initial values
+    allocateResources();
+    intializeGrid();
+    
+    // start GLUT
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowSize(600, 600);
+    glutInitWindowSize(window_width, window_height);
     glutInitWindowPosition(100, 100);
     glutCreateWindow("Heat Distribution");
 
@@ -77,12 +176,8 @@ int main(int argc, char **argv) {
     glutDisplayFunc(display);
     glutMainLoop();
 
-    for (int i = 0; i < size; i++) {
-        free(grid[i]);
-        free(new_grid[i]);
-    }
-    free(grid);
-    free(new_grid);
+    // free memory when program ends
+    freeResources();
 
     return 0;
 }
