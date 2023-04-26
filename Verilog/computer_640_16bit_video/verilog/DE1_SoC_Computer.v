@@ -191,6 +191,7 @@ input						CLOCK2_50;
 input						CLOCK3_50;
 input						CLOCK4_50;
 
+
 // ADC
 inout						ADC_CS_N;
 output					ADC_DIN;
@@ -372,6 +373,9 @@ HexDigit Digit1(HEX1, hex3_hex0[7:4]);
 HexDigit Digit2(HEX2, hex3_hex0[11:8]);
 HexDigit Digit3(HEX3, hex3_hex0[15:12]);
 
+wire [31:0] X_coord;
+wire [31:0] y_coord;
+
 //=======================================================
 //  Structural coding
 //=======================================================
@@ -388,6 +392,10 @@ Computer_System The_System (
 	// AV Config
 	.av_config_SCLK							(FPGA_I2C_SCLK),
 	.av_config_SDAT							(FPGA_I2C_SDAT),
+	
+	//OUTPUTS: HPS to FPGA
+	.x_coordinate_external_connection_export (X_coord),
+	.Y_coordinate_external_connection_export (y_coord),
 
 	// VGA Subsystem
 	.vga_pll_ref_clk_clk 					(CLOCK2_50),

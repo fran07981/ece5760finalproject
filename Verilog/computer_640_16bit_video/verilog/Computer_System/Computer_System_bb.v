@@ -95,7 +95,9 @@ module Computer_System (
 	vga_G,
 	vga_B,
 	vga_pll_ref_clk_clk,
-	vga_pll_ref_reset_reset);	
+	vga_pll_ref_reset_reset,
+	x_coordinate_external_connection_export,
+	y_coordinate_external_connection_export);	
 
 	inout		av_config_SDAT;
 	output		av_config_SCLK;
@@ -193,4 +195,6 @@ module Computer_System (
 	output	[7:0]	vga_B;
 	input		vga_pll_ref_clk_clk;
 	input		vga_pll_ref_reset_reset;
+	output	[31:0]	x_coordinate_external_connection_export;
+	output	[31:0]	y_coordinate_external_connection_export;
 endmodule

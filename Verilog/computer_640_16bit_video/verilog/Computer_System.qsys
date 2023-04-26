@@ -147,6 +147,38 @@
          type = "boolean";
       }
    }
+   element x_coordinate
+   {
+      datum _sortIndex
+      {
+         value = "7";
+         type = "int";
+      }
+   }
+   element x_coordinate.s1
+   {
+      datum baseAddress
+      {
+         value = "16";
+         type = "String";
+      }
+   }
+   element y_coordinate
+   {
+      datum _sortIndex
+      {
+         value = "8";
+         type = "int";
+      }
+   }
+   element y_coordinate.s1
+   {
+      datum baseAddress
+      {
+         value = "32";
+         type = "String";
+      }
+   }
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
@@ -201,6 +233,16 @@
    name="vga_pll_ref_reset"
    internal="VGA_Subsystem.vga_pll_ref_reset"
    type="reset"
+   dir="end" />
+ <interface
+   name="x_coordinate_external_connection"
+   internal="x_coordinate.external_connection"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="y_coordinate_external_connection"
+   internal="y_coordinate.external_connection"
+   type="conduit"
    dir="end" />
  <module name="ARM_A9_HPS" kind="altera_hps" version="18.1" enabled="1">
   <parameter name="ABSTRACT_REAL_COMPARE_TEST" value="false" />
@@ -853,6 +895,42 @@
   <parameter name="AUTO_VGA_PLL_REF_CLK_CLOCK_RATE" value="0" />
   <parameter name="AUTO_VGA_PLL_REF_CLK_RESET_DOMAIN" value="4" />
  </module>
+ <module
+   name="x_coordinate"
+   kind="altera_avalon_pio"
+   version="18.1"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="100000000" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="32" />
+ </module>
+ <module
+   name="y_coordinate"
+   kind="altera_avalon_pio"
+   version="18.1"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="100000000" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="32" />
+ </module>
  <connection
    kind="avalon"
    version="18.1"
@@ -902,6 +980,24 @@
    kind="avalon"
    version="18.1"
    start="ARM_A9_HPS.h2f_lw_axi_master"
+   end="x_coordinate.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0010" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="18.1"
+   start="ARM_A9_HPS.h2f_lw_axi_master"
+   end="y_coordinate.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0020" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="18.1"
+   start="ARM_A9_HPS.h2f_lw_axi_master"
    end="Pixel_DMA_Addr_Translation.slave">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x3020" />
@@ -935,6 +1031,16 @@
    version="18.1"
    start="System_PLL.sys_clk"
    end="AV_Config.clk" />
+ <connection
+   kind="clock"
+   version="18.1"
+   start="System_PLL.sys_clk"
+   end="x_coordinate.clk" />
+ <connection
+   kind="clock"
+   version="18.1"
+   start="System_PLL.sys_clk"
+   end="y_coordinate.clk" />
  <connection
    kind="clock"
    version="18.1"
@@ -984,6 +1090,16 @@
    kind="reset"
    version="18.1"
    start="ARM_A9_HPS.h2f_reset"
+   end="x_coordinate.reset" />
+ <connection
+   kind="reset"
+   version="18.1"
+   start="ARM_A9_HPS.h2f_reset"
+   end="y_coordinate.reset" />
+ <connection
+   kind="reset"
+   version="18.1"
+   start="ARM_A9_HPS.h2f_reset"
    end="Onchip_SRAM.reset1" />
  <connection
    kind="reset"
@@ -1005,6 +1121,16 @@
    version="18.1"
    start="System_PLL.reset_source"
    end="Pixel_DMA_Addr_Translation.reset" />
+ <connection
+   kind="reset"
+   version="18.1"
+   start="System_PLL.reset_source"
+   end="x_coordinate.reset" />
+ <connection
+   kind="reset"
+   version="18.1"
+   start="System_PLL.reset_source"
+   end="y_coordinate.reset" />
  <connection
    kind="reset"
    version="18.1"
