@@ -10,9 +10,8 @@
 
 
 // define constants
-#define TIME_STEPS 1000
-#define DELTA_T 0.25
-#define ALPHA 1.0
+#define DELTA_T 0.01
+#define ALPHA 0.8
 
 int grid_size = 0;
 float **currGrid;

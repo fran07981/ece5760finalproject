@@ -33,7 +33,7 @@ void freeResources()
 void intializeGrid()
 {
     // add some heat to the the center
-    currGrid[grid_size / 2][grid_size / 2] = 100.0f;
+    currGrid[grid_size / 2][grid_size / 2] = 2.0f;
 }
 
 void setBoundaries()
