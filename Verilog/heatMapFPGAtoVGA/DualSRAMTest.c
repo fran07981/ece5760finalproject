@@ -162,18 +162,18 @@ int main(void)
 		y1 = (rand() & 0xff) ;
 		y2 = y1 + (rand() & 0xff) ;
 		color = rand() & 0xff ;
-		// start the timer
-		gettimeofday(&t1, NULL);
-		// set up parameters
-		*(sram_ptr+1) = x1;
-		*(sram_ptr+2) = y1;
-		*(sram_ptr+3) = x2;
-		*(sram_ptr+4) = y2;
-		*(sram_ptr+5) = color;
-		*(sram_ptr) = 1; // the "data-ready" flag
+		// // start the timer
+		// gettimeofday(&t1, NULL);
+		// // set up parameters
+		// *(sram_ptr+1) = x1;
+		// *(sram_ptr+2) = y1;
+		// *(sram_ptr+3) = x2;
+		// *(sram_ptr+4) = y2;
+		// *(sram_ptr+5) = color;
+		// *(sram_ptr) = 1; // the "data-ready" flag
 	
-		// wait for FPGA to zero the "data_ready" flag
-		while (*(sram_ptr)==1) ;
+		// // wait for FPGA to zero the "data_ready" flag
+		// while (*(sram_ptr)==1) ;
 		
 		// time the FPGA
 		gettimeofday(&t2, NULL);
