@@ -142,7 +142,7 @@ void *thread_func1(void *arg) {
         fcntl(fd2, F_SETFL, flags | O_NONBLOCK); 
 
         bytes_mouse = read(fd2, data, sizeof(data));
-
+    
         if(bytes_mouse > 0)
         {
             left_click = data[0] & 0x1;
