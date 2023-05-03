@@ -173,7 +173,6 @@ void *readMouseThread(void *arg) {
     } //while
 } //funciton
 
-
 void *readKeyboardThread(void *arg) {
     fcntl(STDIN_FILENO, F_SETFL, (int)fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
 	fd_set read_message;
