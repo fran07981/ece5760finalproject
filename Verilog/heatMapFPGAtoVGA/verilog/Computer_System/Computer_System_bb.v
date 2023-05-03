@@ -88,15 +88,6 @@ module Computer_System (
 	onchip_vga_buffer_s1_write,
 	onchip_vga_buffer_s1_readdata,
 	onchip_vga_buffer_s1_writedata,
-	pio_done_external_connection_export,
-	pio_dx_c_external_connection_1_export,
-	pio_dy_c_external_connection_2_export,
-	pio_in_done_external_connection_export,
-	pio_mandel_timer_external_connection_export,
-	pio_max_iterations_external_connection_export,
-	pio_reset_external_connection_export,
-	pio_zoom_num_external_connection_export,
-	pll_0_outclk0_clk,
 	sdram_addr,
 	sdram_ba,
 	sdram_cas_n,
@@ -208,15 +199,6 @@ module Computer_System (
 	input		onchip_vga_buffer_s1_write;
 	output	[7:0]	onchip_vga_buffer_s1_readdata;
 	input	[7:0]	onchip_vga_buffer_s1_writedata;
-	input		pio_done_external_connection_export;
-	output	[26:0]	pio_dx_c_external_connection_1_export;
-	output	[26:0]	pio_dy_c_external_connection_2_export;
-	input		pio_in_done_external_connection_export;
-	input	[31:0]	pio_mandel_timer_external_connection_export;
-	output	[26:0]	pio_max_iterations_external_connection_export;
-	output		pio_reset_external_connection_export;
-	output	[3:0]	pio_zoom_num_external_connection_export;
-	output		pll_0_outclk0_clk;
 	output	[12:0]	sdram_addr;
 	output	[1:0]	sdram_ba;
 	output		sdram_cas_n;
