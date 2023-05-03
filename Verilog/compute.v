@@ -1,7 +1,7 @@
 //============================================================
 // COMPUTE - finds the center_Grid values value at time t = n + 1 
 //============================================================
-module compute(node_center, node_up, node_down, node_left, node_right, alpha, delta, new_center);
+module compute(node_center, node_up, node_down, node_left, node_right, mult_alpha_delta, new_center);
 
     // 5.27 Signed Fixed Point 
 
@@ -11,27 +11,20 @@ module compute(node_center, node_up, node_down, node_left, node_right, alpha, de
     input   wire signed [31:0] node_left;
     input   wire signed [31:0] node_right;
 
-    input   wire signed [31:0] alpha;
-    input   wire signed [31:0] delta;
+    input   wire signed [31:0] mult_alpha_delta;
 
     output  wire signed [31:0] new_center;
 
-    wire signed [17:0] u_sum_part_1;
-    wire signed [17:0] u_sum_part_2;
-    wire signed [17:0] u_sum_part_3;
-    wire signed [17:0] u_sum_part_4;
+    wire signed [31:0] n_sum_part_1;
+    wire signed [31:0] n_sum_part_2;
+    wire signed [31:0] n_sum_part_3;
+    wire signed [31:0] n_sum_part_4;
 
     assign n_sum_part_1 = node_down     - node_center;
     assign n_sum_part_2 = node_left     - node_center;
     assign n_sum_part_3 = node_right    - node_center;
     assign n_sum_part_4 = node_up       - node_center;
 
-    wire signed [31:0] mult_alpha_delta;
-    signed_mult alpdel(
-            .out (mult_alpha_delta),
-            .a   (alpha),
-            .b   (delta)
-            );
             
     wire signed [31:0] n_sum_result;
     assign n_sum_result = n_sum_part_1 + n_sum_part_2 +  n_sum_part_3 + n_sum_part_4;
@@ -60,4 +53,32 @@ module signed_mult(out, a, b);
     assign mult_out = a*b;
 
     assign out = {mult_out[63],mult_out[61:30]} 
+endmodule
+
+//============================================================
+// M10K Module Definitions
+//============================================================
+
+// M10K Memory block structure: 
+// word 1		node 1 = u [ 17:0 ]
+// word 2		node 2
+// .
+// .
+// word 256		node 32
+
+module M10K_256_32( 
+    output reg [31:0] q,
+    input [31:0] d,
+    input [7:0] write_address, read_address,
+    input we, clk
+);
+	 // force M10K ram style
+    reg [31:0] mem [255:0]  /* synthesis ramstyle = "no_rw_check, M10K" */;
+	 
+    always @ (posedge clk) begin
+        if (we) begin
+            mem[write_address] <= d;
+        end
+        q <= mem[read_address]; // q doesn't get d in this clock cycle
+    end
 endmodule
