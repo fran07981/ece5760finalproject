@@ -124,7 +124,7 @@ void *thread_func1(void *arg) {
     if(fd2 == -1)
     {
         printf("ERROR Opening %s\n", pDevice);
-        return -1;
+        //return -1;
     }
 	signed char x_delta, y_delta;
     float x, y;
@@ -142,7 +142,7 @@ void *thread_func1(void *arg) {
         fcntl(fd2, F_SETFL, flags | O_NONBLOCK); 
 
         bytes_mouse = read(fd2, data, sizeof(data));
-
+    
         if(bytes_mouse > 0)
         {
             left_click = data[0] & 0x1;
@@ -153,7 +153,7 @@ void *thread_func1(void *arg) {
         	
             x = (float)temp_x;
             y = (float)temp_y;
-            // printf("x=%f, y=%f, left=%d, right=%d\n", x, y, left_click, right_click);
+             printf("x=%f, y=%f, left=%d, right=%d\n", x, y, left_click, right_click);
 
             if ( left_click > 0) {
                 adding = 1;
