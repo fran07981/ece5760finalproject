@@ -394,8 +394,8 @@ Computer_System The_System (
 	.av_config_SDAT							(FPGA_I2C_SDAT),
 	
 	//OUTPUTS: HPS to FPGA
-	.x_coordinate_external_connection_export (X_coord),
-	.Y_coordinate_external_connection_export (y_coord),
+	//.x_coordinate_external_connection_export (X_coord),
+	//.Y_coordinate_external_connection_export (y_coord),
 
 	// VGA Subsystem
 	.vga_pll_ref_clk_clk 					(CLOCK2_50),

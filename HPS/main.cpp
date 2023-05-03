@@ -43,7 +43,7 @@ volatile unsigned int   * pio_dt = NULL;
 #define DT_OFFSET         0X60
 
 
-int pause = 0;
+int pause_sys = 0;
 float delay = 10000;	// default delay value
 
 void *readMouseThread(void *arg) {
@@ -108,7 +108,7 @@ void *readMouseThread(void *arg) {
 					printf("Source or Sink? (1 or 2) \n");
 					while (change == 0) { if (scanf("%d", &ss) == 1 ) change = 1; }
 					
-                    if (pause == 0) { //simulation is running  
+                    if (pause_sys == 0) { //simulation is running  
                         if (incr_si == 0 && incr_so == 0) {  //check if simulation was previously paused and values were added to matrix
                             if (ss == 1) { 
                                 *(pio_so_x_coord) = x_coord; //add source as simulation is running
@@ -149,7 +149,7 @@ void *readMouseThread(void *arg) {
                             }  
                         }   
 
-                    } else if (pause == 1) { //simulation is paused to add sources/sinks
+                    } else if (pause_sys == 1) { //simulation is paused to add sources/sinks
                             //store all values in a matrix --> need to figure out how to send to FPGA
                         	 if (ss == 1) { 
                                 source [incr_so][1] =  x_coord;  
@@ -182,8 +182,6 @@ void *readKeyboardThread(void *arg) {
     char buf[1024];
     int buf_index = 0;
 
-	int pause = 0; 			// 0 = go 1 = paused
-
     while(1) {
         FD_ZERO(&read_message);
         FD_SET(STDIN_FILENO, &read_message);
@@ -207,8 +205,8 @@ void *readKeyboardThread(void *arg) {
                 buf[buf_index] = '\0';
                 
 				 // Commands for "stop, go, speed up, slow down" 
-			    if      (strcmp(buf, "stop") == 0) pause = 1;
-                else if (strcmp(buf, "go"  ) == 0) pause = 0;
+			    if      (strcmp(buf, "stop") == 0)  pause_sys = 1;
+                else if (strcmp(buf, "go"  ) == 0)  pause_sys = 0;
          	  	else if (strcmp(buf, "w"   ) == 0) delay = (delay / 10 < 0.0001) ? 0.0001 : delay / 10;
 				else if (strcmp(buf, "e"   ) == 0) delay = (delay * 10 >= FLT_MAX / 10) ? FLT_MAX / 10 : delay * 10;  
                     
@@ -251,12 +249,12 @@ void *plotHeatThread(void *arg) {
 
 int main(void)
 {
-    pio_so_x_coord 	= (unsigned int *)(h2p_lw_virtual_base + SO_X_OFFSET     );
-    pio_so_y_coord 	= (unsigned int *)(h2p_lw_virtual_base + SO_Y_OFFSET     );
-    pio_si_x_coord 	= (unsigned int *)(h2p_lw_virtual_base + SI_X_OFFSET     );
-    pio_so_y_coord 	= (unsigned int *)(h2p_lw_virtual_base + SI_Y_OFFSET     );
-    pio_reset       = (unsigned int *)(h2p_lw_virtual_base + RESET_OFFSET    );
-    pio_dt          = (unsigned int *)(h2p_lw_virtual_base + DT_OFFSET       );
+    // pio_so_x_coord 	= (unsigned int *)(h2p_lw_virtual_base + SO_X_OFFSET     );
+    // pio_so_y_coord 	= (unsigned int *)(h2p_lw_virtual_base + SO_Y_OFFSET     );
+    // pio_si_x_coord 	= (unsigned int *)(h2p_lw_virtual_base + SI_X_OFFSET     );
+    // pio_so_y_coord 	= (unsigned int *)(h2p_lw_virtual_base + SI_Y_OFFSET     );
+    // pio_reset       = (unsigned int *)(h2p_lw_virtual_base + RESET_OFFSET    );
+    // pio_dt          = (unsigned int *)(h2p_lw_virtual_base + DT_OFFSET       );
 
 	if (setupConnection() == 1) return(1);	
 
