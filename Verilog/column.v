@@ -6,18 +6,21 @@
 // inputs :
 // 		clk 			in top level has to be CLOCK_50
 // 		reset 			in top level 
-// 		current_col 	tells us which column it is (bit size here is based on the max number of rows we can achieve. Start with 3 bits (for now))
-// 		height			tells us how tall column is ( same as current col, lets start with 3 bits)
+// 		current_col 	tells us which column it is (bit size here is based on the max number of rows we can achieve.)
+// 		height			tells us how tall column is ( same as current col))
 //		width			gives us number of columns we have
-//		rho_eff
-// 		u_reg_right		connected input from other column
-// 		u_reg_left		connected input from other column
+//		alpha 
+// 		delta
+// 		n_reg_right		connected input from other column
+// 		n_reg_left		connected input from other column
+//		so_y_coord		source set val at this height/row number
+//		si_y_coord		sink set val at this height/row number
 // outputs :
-// 		u_n				becomes the inputs to the other modules
+// 		node_center				becomes the inputs to the other modules
 
-module build_column(clk, reset, current_col, height, width, alpha, delta, node_right, node_left, node_center, flag, start);
-	localparam row_bits = 8; // 9 total [8:0]
-	localparam col_bits = 8; // idk total [???:0]
+module build_column(clk, reset, current_col, height, width, mult_alpha_delta, node_right, node_left, so_y_coord, si_y_coord, node_center, flag, start);
+	localparam row_bits = 31; // For consistency, actually shold be ok with 9 bits/n=8
+	localparam col_bits = 31; // 
 	
 	// ---- Inputs & Outputs ----
 	input 		 clk, reset;
@@ -27,16 +30,16 @@ module build_column(clk, reset, current_col, height, width, alpha, delta, node_r
 	input [row_bits:0] height;
 	input start;
 
-	reg [row_bits:0] mid; 
-	
+	input  wire signed [31:0] mult_alpha_delta;
+
 	input  wire signed [31:0] node_right;
 	input  wire signed [31:0] node_left;
-    
-	output wire signed [17:0] u_n;
-	output wire signed [17:0] u_mid_output;
-	output wire 			  flag;
 
-	reg signed [17:0] u_mid;
+	input  wire signed [31:0] so_y_coord;
+	input  wire signed [31:0] si_y_coord;
+    
+	output wire signed [31:0] node_center;
+	output wire 			  flag;
 
 	// ---- General Registers ----
 	reg [row_bits:0] bottom_row; // bottom row is 0th row
@@ -45,39 +48,34 @@ module build_column(clk, reset, current_col, height, width, alpha, delta, node_r
 	reg [col_bits:0] left_edge;  // we are at the left edge when our current col is 0
 	reg [col_bits:0] right_edge; // set to max number of cols chnged from width
 
-	reg [row_bits:0] current_row;		   // we have possible 512 rows, use this for moving up 
+	reg [row_bits:0] current_row;		   // we have possible 256 rows, use this for moving up 
 
 	// ---- Const Values ----
-	wire signed [17:0] fp_0    = 18'b0_0000_0000_0000_0000_0;	// 0
-	wire signed [17:0] fp_0625 = 18'b0_0001_0000_0000_0000_0;	// 0.0625
-	wire signed [17:0] fp_1250 = 18'b0_0010_0000_0000_0000_0; 	// 0.125
-	// wire signed [17:0] delta   = 18'b0_0000_0010_0001_1111_1;  // increment by 0.125/15 until 15 
-	wire signed [17:0] delta   = 18'b0_0000_0100_0001_1000_1;  // increment by 0.25/15 until 15 
+	wire signed [31:0] fp_0    = 32'b0_0000_0000_0000_0000_0000_0000_0000_000;	// 0 
 
-	// ---- Registers that store info (based on slides figure) ----
-	reg signed [17:0]  u_reg_bottom; // saves the bottom node
-	reg signed [17:0]  u_reg_down;	 // saves tge down at t=n from prev u 
-	reg signed [17:0]  u_reg_center; // saves the current at t=n from prev up from M10K
+	// ---- Registers that store info ----
+	reg signed [31:0]  u_reg_bottom; // saves the bottom node
+	reg signed [31:0]  u_reg_down;	 // saves tge down at t=n from prev u 
+	reg signed [31:0]  u_reg_center; // saves the current at t=n from prev up from M10K
 
 	reg flag_reg = 0;
 
-	assign u_n 			= (current_row == bottom_row) ? u_reg_bottom : u_reg_center;
-	assign u_mid_output = u_mid;
+	assign node_center 			= (current_row == bottom_row) ? u_reg_bottom : u_reg_center;
 	assign flag 		= flag_reg;
 
 	// ---- Wires for connecting everything togther ----
-	wire signed [17:0] u_read_data;
-	wire signed [17:0] u_prev_read_data;
+	wire signed [31:0] u_read_data;
+	wire signed [31:0] u_prev_read_data;
 	
 	// Switch to registers test*
-	reg signed [17:0] u_up;
-	reg signed [17:0] u_down;	
+	reg signed [31:0] u_up;
+	reg signed [31:0] u_down;	
 	
-	reg signed [17:0] u_center;
-	reg signed [17:0] u_center_prev;
+	reg signed [31:0] u_center;
+	reg signed [31:0] u_center_prev;
 
 	// ==== U MEMORY BLOCK FOR COLUMN ====
-	reg signed [17:0] u_write_data;
+	reg signed [31:0] u_write_data;
 	reg [row_bits:0]  u_write_addr;	// select the row
 	reg [row_bits:0]  u_read_addr;	// select the row
 	reg 	          u_write_sig;		
@@ -96,7 +94,7 @@ module build_column(clk, reset, current_col, height, width, alpha, delta, node_r
 	reg	[row_bits:0]  u_prev_read_addr;
 	reg	 	   		  u_prev_write_sig;
 	
-	M10K_512_18 u_prev( 
+	M10K_256_32 u_prev( 
 		.q				(u_prev_read_data),
 		.d				(u_prev_write_data),
 		.write_address	(u_prev_write_addr), 
@@ -135,9 +133,8 @@ module build_column(clk, reset, current_col, height, width, alpha, delta, node_r
 			left_edge	<= 0;  		// we are at the left edge when our current col is 0
 			right_edge	<= width; 	// set to max number of cols chnged from width
 			state 		<= state_1;
-			mid 		<= height >> 1; // mid is 14
 			
-			temp <= 18'b0;
+			temp <= fp_0;
 		end
 		// ------------------------------------------------------------------
 		// STATE 1 - tell M10K block's what addr we want to store & to what
@@ -148,7 +145,7 @@ module build_column(clk, reset, current_col, height, width, alpha, delta, node_r
 			u_write_data <= temp;
 			u_write_sig  <= 1'd1;
 
-			// M10K block for u_prev can be all zeros
+			// M10K block for u_prev is initially the same as u current 
 			u_prev_write_addr <= current_row;
 			u_prev_write_data <= temp;
 			u_prev_write_sig  <= 1'd1;
@@ -164,25 +161,25 @@ module build_column(clk, reset, current_col, height, width, alpha, delta, node_r
 		// ------------------------------------------------------------------
 		else if ( state == state_2 ) begin
 			// ( we gotta give 1 time cycle for the M10K block to write)
-			// $display(" current row = %d, current col = %d, mid = %d, math = %d", current_row, current_col, mid, (current_col < 9'd15 ? current_col : ( current_col == 9'd15 ? 9'd14 : ( mid - (current_col - mid - 9'd1) ) )) );
-			if (current_row < (current_col < 9'd14 ? current_col : ( current_col == 9'd15 ? 9'd14 : ( mid - (current_col - mid - 9'd1) ) )) ) begin
-				temp <= temp + delta;  				
-				current_row <= current_row + 9'd1;
+			
+			if (current_row == si_y_coord) begin
+				temp <= 32'b1_0010_0000_0000_0000_0000_0000_0000_000; //Set to -2			
+				current_row <= current_row + 32'd1;
+				state 		<= state_1;				
+			end
+			else if (current_row == so_y_coord) begin
+				temp <= 32'b0_0010_0000_0000_0000_0000_0000_0000_000;		// Set to 2, NEED TO CHECK.
+				current_row <= current_row + 32'd1;
 				state 		<= state_1;				
 			end
 			else if ( current_row == top_row ) begin
 				current_row <= 0;
-				temp 		<= 0;
+				temp 		<= fp_0;
 				state 		<= state_3; 			
 			end
-			else if (current_row > (current_col > 9'd16 ? current_col : ( height - current_col ))  ) begin
-				temp <= temp - delta; 				
-				current_row <= current_row + 9'd1;
-				state 		<= state_1;				
-			end
-			else begin	// middle section stays the same ( 14 and 15 the same )
-				temp <= temp;
-				current_row <= current_row + 9'd1;
+			else begin
+				temp <= fp_0;
+				current_row <= current_row + 32'd1;
 				state 		<= state_1;				
 			end
 			
@@ -304,17 +301,14 @@ module build_column(clk, reset, current_col, height, width, alpha, delta, node_r
 		end
 
 	end
-
-	input [17:0] rho_eff;
 	
-	compute next_node(	
-		.u		 (u_center),	  // center 		u_i,j at t = n	 from 1 of 2 registers
-		.u_prev  (u_center_prev), // center prev u_i,j at t = n-1 from M10K block
-		.u_left  (u_left),		  // lets not deal w this yet
-		.u_right (u_right),
-		.u_up    (u_up),		  // up u_i, j+1  at t = n from the M10K block or 0
-		.u_down  (u_down),		  // down u_i,j-1 at time t = n from register or 0
-		.rho_eff (rho_eff),		  // const ... for now
-		.u_next  (u_next) );	  // output of center (gets sent either to u_bottom or M10K block)
+	compute next_node(
+		.node_center		(),
+		.node_up			(), 
+		.node_down			(), 
+		.node_left			(), 
+		.node_right			(), 
+		.mult_alpha_delta	(mult_alpha_delta), 
+		.new_center			());
 
 endmodule
