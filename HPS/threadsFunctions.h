@@ -2,27 +2,33 @@
 
 #include <string.h>
 #include <float.h>
+#include <stdint.h>
 #include "VGAHelperFunctions.h"
 #include "sim.h"
 
 float delay = 10000;	// default delay value
 int   paused = 0;
 
-float **source = NULL;
-float **sink = NULL;
-float **heat = NULL;
+int **source = NULL;
+int **sink = NULL;
+int **heat = NULL;
+
+// iteratiors
+int sinkIt = 0;
+int sourIt = 0;
+int heatIt = 0;
 
 void allocateGridResources(){
     // define two grids (rows)
-    source = (float **) malloc(10 * sizeof(float *));
-    sink   = (float **) malloc(10 * sizeof(float *));
-	heat   = (float **) malloc(10 * sizeof(float *));
+    source = (int **) malloc(10 * sizeof(int *));
+    sink   = (int **) malloc(10 * sizeof(int *));
+	heat   = (int **) malloc(10 * sizeof(int *));
 
     // 2D array, so each row needs to be allocated (cols)
     for (int i = 0; i < 10; i++) {
-        source[i] = (float *) calloc(2, sizeof(float));
-        sink[i]   = (float *) calloc(2, sizeof(float));
-		heat[i]   = (float *) calloc(2, sizeof(float));
+        source[i] = (int *) calloc(2, sizeof(int));
+        sink[i]   = (int *) calloc(2, sizeof(int));
+		heat[i]   = (int *) calloc(2, sizeof(int));
     }
 }
 
@@ -51,11 +57,6 @@ void *readMouseThread(void *arg) {
 	
 	// arrays that can be filledby users & sent to FPGA through dual SRAM block
 	allocateGridResources();
-
-	// iteratiors
-	int sinkIt = 0;
-	int sourIt = 0;
-	int heatIt = 0;
 
     while (1) {
 		bytes_mouse = read(fd2, data, sizeof(data));
@@ -101,7 +102,7 @@ void *readMouseThread(void *arg) {
 					printf("Making Source: \n");
 					for (int i = 0; i < sourIt; ++i) {
 						for (int j = 0; j < 2; ++j) {
-							printf("%f ", source[i][j]);
+							printf("%d ", source[i][j]);
 						}
 						printf("\n");
 					}
@@ -115,7 +116,7 @@ void *readMouseThread(void *arg) {
 					printf("Making Sink: \n");
 					for (int i = 0; i < sinkIt; ++i) {
 						for (int j = 0; j < 2; ++j) {
-							printf("%f ", sink[i][j]);
+							printf("%d ", sink[i][j]);
 						}
 						printf("\n");
 					}
@@ -135,41 +136,47 @@ void *sendDataThread(void *arg) {
     while(1) 
 	{
 		if (paused == 0) {	
-			int sourceVal =  10;
-			int heatVal   =   5;
-			int sinkVal   = -10;
+			uint16_t sourceVal =  10;
+			uint16_t heatVal   =   5;
+			int8_t   sinkVal   = -10;
 			
-			// y = 0-479 (8  bits ->  512) 12
+			// y = 0-479 (9  bits ->  512) 12
 			// x = 0-639 (10 bits -> 1024) 12
 			// val = -100 - 100 (4 bits + 1 sign bit) 8 bits 
 			// 32 bits: |0000|0000|0000 | 0000|0000|0000 | 0000|0000
 			//		    [-------X-------] [-------Y------] [--VAL--]
 
-			// TODO:: FIGURE OUT SECTION BELOW:::
-			for (int i = 0; i < sourIt; ++i) {
-				unsigned short x_coord = static_cast<unsigned short>( source[i][1] * 8.0f);
-				unsigned short y_coord = static_cast<unsigned short>( source[i][1] * 8.0f);
-				unsigned short value   = static_cast<unsigned short>( sourceVal    * 4.0f);
+			// 1st value in the M10K block is the "data-ready" flag
+			// 2nd value in the M10K block is the # of values? (still deciding on this or using an )
+			
+			int start = 2;
+			int end   = 2 + sourIt;
+			for (int i = start; i < end; ++i) {	
+				uint32_t x_coord = source[i][1] << 20;
+				uint32_t y_coord = source[i][1] << 8;
+				uint32_t value   = static_cast<uint8_t>(sourceVal);
 
-				
+				uint32_t sendValue = x_coord | y_coord | value;
+
+				*( sram_ptr + i ) = sendValue;
 			}
 
+			start = 2 + sourIt;
+			end   = sinkIt + 2 + sourIt;
+			for (int i = start; i < end; ++i) {	
+				uint32_t x_coord = sink[i][1] << 20;
+				uint32_t y_coord = sink[i][1] << 8;
+				uint32_t value   = static_cast<uint8_t>(sourceVal);
+
+				uint32_t sendValue = x_coord | y_coord | value;
+
+				*( sram_ptr + i ) = sendValue;
+			}
 			
-			r = r << 5;
-			g = g << 2;
-			b = b ; 
-			unsigned short pixel_color = b | g | r;
-			
-			// set up parameters
-			*( sram_ptr + 1 ) = x1;
-			*( sram_ptr + 2 ) = y1;
-			*( sram_ptr + 3 ) = x2;
-			*( sram_ptr + 4 ) = y2;
-			*( sram_ptr + 5 ) = color;
-			*( sram_ptr ) = 1; 			// the "data-ready" flag
-		
+			*( sram_ptr ) = 1; 			// "data-ready" flag
 			while (*(sram_ptr)==1);		// wait for FPGA to zero the "data_ready" flag
 		}
+		usleep(delay);
 	}
 }
 
