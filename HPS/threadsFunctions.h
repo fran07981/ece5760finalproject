@@ -151,8 +151,6 @@ void *sendDataThread(void *arg) {
 			// 1st value in the M10K block is the "data-ready" flag
 			// 2nd value in the M10K block is the # of values? (still deciding on this or using an )
 			
-			int start = 2;
-			int end   = 2 + sourIt;
 			printf("  Adding source: ");
 			for (int i = 0; i < sourIt; ++i) {
 				for (int j = 0; j < 2; ++j) {
@@ -161,18 +159,16 @@ void *sendDataThread(void *arg) {
 				printf("\n");
 			}
 
-			for (int i = start; i < end; ++i) {	
-				uint32_t x_coord = source[i][1] << 20;
-				uint32_t y_coord = source[i][2] << 8;
+			for (int i = 0; i < sourIt; ++i) {	
+				uint32_t x_coord = source[i][0] << 20;
+				uint32_t y_coord = source[i][1] << 8;
 				uint32_t value   = static_cast<uint8_t>(sourceVal);
 
 				uint32_t sendValue = x_coord | y_coord | value;
 				printf(" x: %x y: %x val: %x sent: %x \n", x_coord, y_coord, value, sendValue);
-				*( sram_ptr + i ) = sendValue;
+				*( sram_ptr + i + 2 ) = sendValue;
 			}
 
-			start = 2 + sourIt;
-			end   = sinkIt + 2 + sourIt;
 			printf("  Adding sink: ");
 			for (int i = 0; i < sourIt; ++i) {
 				for (int j = 0; j < 2; ++j) {
@@ -180,14 +176,14 @@ void *sendDataThread(void *arg) {
 				}
 				printf("\n");
 			}
-			for (int i = start; i < end; ++i) {	
-				uint32_t x_coord = sink[i][1] << 20;
-				uint32_t y_coord = sink[i][2] << 8;
+			for (int i = 0; i < sinkIt; ++i) {	
+				uint32_t x_coord = sink[i][0] << 20;
+				uint32_t y_coord = sink[i][1] << 8;
 				uint32_t value   = static_cast<uint8_t>(sinkVal);
 
 				uint32_t sendValue = x_coord | y_coord | value;
 
-				*( sram_ptr + i ) = sendValue;
+				*( sram_ptr + i + 2 + sourIt) = sendValue;
 			}
 			
 			*( sram_ptr ) = 1; 			// "data-ready" flag
