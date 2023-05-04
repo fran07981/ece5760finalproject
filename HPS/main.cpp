@@ -31,8 +31,7 @@
 #include <float.h>
 
 #include "address_map_arm_brl4.h"
-#include "interface.h"
-#include "sim.h"
+#include "threadsFunctions.h"
 #include "VGAHelperFunctions.h"
 
 
@@ -44,34 +43,25 @@ struct timespec delay_time ;
 
 int main(void)
 {
-	delay_time.tv_nsec = 10;
-	delay_time.tv_sec  = 0;
-
-	if (setupConnection() == 1) return(1);
-
 	// clear the screen & text
-	VGA_box (0, 0, 639, 479, 0x0000);
-	VGA_text_clear();
+	if (setupConnection() == 1) return(1);
+	clearMonitor();
 
-	// set up grid & initial values
-	grid_size = 100;
-    allocateResources();
-    intializeGrid();
-
-    // launch all the threads
+	// launch all the threads
+	
 	// pthread_t thread1;
 	pthread_t thread2, thread3, thread4;
 
 	// pthread_create(&thread1, NULL, plotHeatThread, NULL);
     pthread_create(&thread2, NULL, readMouseThread, NULL);
     pthread_create(&thread3, NULL, readKeyboardThread, NULL);
-	// pthread_create(&thread4, NULL, sendDataThread, NULL);
+	pthread_create(&thread4, NULL, sendDataThread, NULL);
 
     // join threads and free resources when done
     // pthread_join(thread1, NULL);
     pthread_join(thread2, NULL);
     pthread_join(thread3, NULL);
-	// pthread_join(thread4, NULL);
+	pthread_join(thread4, NULL);
 
 	freeResources();    // free memory when program ends
     return 0;

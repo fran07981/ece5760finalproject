@@ -4,6 +4,11 @@
 
 #include "address_map_arm_brl4.h"
 
+void clearMonitor(){
+	VGA_box (0, 0, 639, 479, 0x0000);
+	VGA_text_clear();
+}
+
 void plotPoint(int i, int j, int colorIndex) {
 	// calculate the color index based on the temperature value
 	

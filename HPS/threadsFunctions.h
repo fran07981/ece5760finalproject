@@ -141,29 +141,27 @@ void *sendDataThread(void *arg) {
 		// addr=3 x2, addr=4 y2
 		// addr=5 color
 		// query for x1,y1,x2,y2, color(1-byte hex)
-		//scanf("%d %d %d %d %d", &x1, &y1, &x2, &y2, &color);
-		//printf("data entered\n\r");
+		// scanf("%d %d %d %d %d", &x1, &y1, &x2, &y2, &color);
+		// printf("data entered\n\r");
 		x1 = rand() & 0x7f;
 		x2 = x1 + (rand() & 0x7f);
 		y1 = (rand() & 0xff) ;
 		y2 = y1 + (rand() & 0xff) ;
 		color = rand() & 0xff ;
-		// // start the timer
-		// gettimeofday(&t1, NULL);
-		// // set up parameters
-		// *(sram_ptr+1) = x1;
-		// *(sram_ptr+2) = y1;
-		// *(sram_ptr+3) = x2;
-		// *(sram_ptr+4) = y2;
-		// *(sram_ptr+5) = color;
-		// *(sram_ptr) = 1; // the "data-ready" flag
+		
+		// set up parameters
+		*(sram_ptr+1) = x1;
+		*(sram_ptr+2) = y1;
+		*(sram_ptr+3) = x2;
+		*(sram_ptr+4) = y2;
+		*(sram_ptr+5) = color;
+		*(sram_ptr) = 1; // the "data-ready" flag
 	
-		// // wait for FPGA to zero the "data_ready" flag
-		// while (*(sram_ptr)==1) ;
+		// wait for FPGA to zero the "data_ready" flag
+		while (*(sram_ptr)==1);
 		
 		// note that this version of VGA_disk has THROTTLED pixel write disabled
-		VGA_box (x1+320, y1, x2+320, y2, color) ;
-		
+		// VGA_box (x1+320, y1, x2+320, y2, color) ;
 	}
 }
 
@@ -218,6 +216,11 @@ void *readKeyboardThread(void *arg) {
 
 void *plotHeatThread(void *arg) {
 	printf("entering plot thread\n");
+	// set up grid & initial values
+	grid_size = 100;
+    allocateResources();
+    intializeGrid();
+	
 	while(1){
 		simulate();
 		for (int i = 1; i < grid_size - 1; i++) {
