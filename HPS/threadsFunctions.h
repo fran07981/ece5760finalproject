@@ -8,6 +8,7 @@
 
 float delay = 10000;	// default delay value
 int   paused = 0;
+int   send = 0;
 
 int **source = NULL;
 int **sink = NULL;
@@ -131,11 +132,12 @@ void *readMouseThread(void *arg) {
 }
 
 void *sendDataThread(void *arg) {
-	printf("entering data send thread");
+	printf("entering data send thread\n");
 	int count = 0;
     while(1) 
 	{
-		if (paused == 0) {	
+		if (send == 1) {	
+			printf(" ~sending first data value~ \n\n");
 			uint16_t sourceVal =  10;
 			uint16_t heatVal   =   5;
 			int8_t   sinkVal   = -10;
@@ -151,22 +153,37 @@ void *sendDataThread(void *arg) {
 			
 			int start = 2;
 			int end   = 2 + sourIt;
+			printf("  Adding source: ");
+			for (int i = 0; i < sourIt; ++i) {
+				for (int j = 0; j < 2; ++j) {
+					printf("    %d ", source[i][j]);
+				}
+				printf("\n");
+			}
+
 			for (int i = start; i < end; ++i) {	
 				uint32_t x_coord = source[i][1] << 20;
-				uint32_t y_coord = source[i][1] << 8;
+				uint32_t y_coord = source[i][2] << 8;
 				uint32_t value   = static_cast<uint8_t>(sourceVal);
 
 				uint32_t sendValue = x_coord | y_coord | value;
-
+				printf(" x: %x y: %x val: %x sent: %x \n", x_coord, y_coord, value, sendValue);
 				*( sram_ptr + i ) = sendValue;
 			}
 
 			start = 2 + sourIt;
 			end   = sinkIt + 2 + sourIt;
+			printf("  Adding sink: ");
+			for (int i = 0; i < sourIt; ++i) {
+				for (int j = 0; j < 2; ++j) {
+					printf("    %d ", sink[i][j]);
+				}
+				printf("\n");
+			}
 			for (int i = start; i < end; ++i) {	
 				uint32_t x_coord = sink[i][1] << 20;
-				uint32_t y_coord = sink[i][1] << 8;
-				uint32_t value   = static_cast<uint8_t>(sourceVal);
+				uint32_t y_coord = sink[i][2] << 8;
+				uint32_t value   = static_cast<uint8_t>(sinkVal);
 
 				uint32_t sendValue = x_coord | y_coord | value;
 
@@ -175,6 +192,7 @@ void *sendDataThread(void *arg) {
 			
 			*( sram_ptr ) = 1; 			// "data-ready" flag
 			while (*(sram_ptr)==1);		// wait for FPGA to zero the "data_ready" flag
+			send = 0;
 		}
 		usleep(delay);
 	}
@@ -214,7 +232,9 @@ void *readKeyboardThread(void *arg) {
 			    if      (strcmp(buf, "stop") == 0)  paused = 1;
                 else if (strcmp(buf, "go"  ) == 0)  paused = 0;
          	  	else if (strcmp(buf, "w"   ) == 0)  delay = (delay / 10 < 0.0001) ? 0.0001 : delay / 10;
+				else if (strcmp(buf, "send") == 0)  send = 1;  
 				else if (strcmp(buf, "s"   ) == 0)  delay = (delay * 10 >= FLT_MAX / 10) ? FLT_MAX / 10 : delay * 10;  
+				
                     
 				// since entire buffer has been read, set index back to 0 to overwrite previous values
 				buf_index = 0;
