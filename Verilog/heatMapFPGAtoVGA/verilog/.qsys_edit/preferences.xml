@@ -4,7 +4,7 @@
  <systemtable filter="All Interfaces">
   <columns>
    <connections preferredWidth="207" />
-   <irq preferredWidth="47" />
+   <irq preferredWidth="34" />
   </columns>
  </systemtable>
  <library expandedCategories="Library,Project" />

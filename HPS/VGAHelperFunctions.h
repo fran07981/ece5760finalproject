@@ -15,15 +15,20 @@ void plotPoint(int i, int j, int colorIndex) {
 
 	// 16 bits
 	// (0+(0<<5)+(31<<11))
-	// R bits 11-15 mask 0xf800
+	// R bits 11-15 mask 0xf800	
 	// G bits 5-10  mask 0x07e0
 	// B bits 0-4   mask 0x001f
 	// 65535
-	unsigned short r = static_cast<unsigned short>( rf * 32.0f);
-	unsigned short g = static_cast<unsigned short>( gf * 64.0f);
-	unsigned short b = static_cast<unsigned short>( bf * 32.0f);
-	r = r << 11;
-	g = g << 5;
+
+	// 8 bits
+	// R bits 5-7
+	// G bits 2-4
+	// B bits 0-1
+	unsigned short r = static_cast<unsigned short>( rf * 8.0f);
+	unsigned short g = static_cast<unsigned short>( gf * 8.0f);
+	unsigned short b = static_cast<unsigned short>( bf * 4.0f);
+	r = r << 5;
+	g = g << 2;
 	b = b ; 
 	unsigned short pixel_color = b | g | r;
 		//	0 0.267004 	0.004874 	0.329415
@@ -360,7 +365,7 @@ void draw_delay(void){
 ****************************************************************************************/
 #define SWAP(X,Y) do{int temp=X; X=Y; Y=temp;}while(0) 
 
-void VGA_Hline(int x1, int y1, int x2, short pixel_color)
+void VGA_Hline(int x1, int y1, int x2, char pixel_color)
 {
 	char  *pixel_ptr ; 
 	int row, col;
@@ -389,7 +394,7 @@ void VGA_Hline(int x1, int y1, int x2, short pixel_color)
 ****************************************************************************************/
 #define SWAP(X,Y) do{int temp=X; X=Y; Y=temp;}while(0) 
 
-void VGA_Vline(int x1, int y1, int y2, short pixel_color)
+void VGA_Vline(int x1, int y1, int y2, char pixel_color)
 {
 	char  *pixel_ptr ; 
 	int row, col;
@@ -404,6 +409,7 @@ void VGA_Vline(int x1, int y1, int y2, short pixel_color)
 	if (y1>y2) SWAP(y1,y2);
 	// line
 	col = x1;
+	// printf("printing vertline at col = %d color = %c \n", col, pixel_color);
 	for (row = y1; row <= y2; row++){
 		//640x480
 		//pixel_ptr = (char *)vga_pixel_ptr + (row<<10)    + col ;

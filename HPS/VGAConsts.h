@@ -6,8 +6,8 @@ void VGA_text_clear();
 void VGA_box (int, int, int, int, short);
 void VGA_line(int, int, int, int, short) ;
 void draw_delay(void) ;
-void VGA_Vline(int, int, int, short) ;
-void VGA_Hline(int, int, int, short) ;
+void VGA_Vline(int, int, int, char) ;
+void VGA_Hline(int, int, int, char) ;
 
 // the light weight buss base
 void *h2p_lw_virtual_base;
@@ -42,5 +42,5 @@ int fd;
 // 	*(short *)pixel_ptr = (color);\
 // } while(0)
 
-#define white (0xffff)
-#define black (0x0000)
+// #define white (0xffff)
+// #define black (0x0000)

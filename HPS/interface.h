@@ -5,8 +5,32 @@
 #include "VGAHelperFunctions.h"
 #include "sim.h"
 
+float delay = 10000;	// default delay value
+int pause_sys = 0;
+
+float **source = NULL;
+float **sink = NULL;
+float **heat = NULL;
+
+void allocateGridResources(){
+    // define two grids (rows)
+    source = (float **) malloc(10 * sizeof(float *));
+    sink   = (float **) malloc(10 * sizeof(float *));
+	heat   = (float **) malloc(10 * sizeof(float *));
+
+    // 2D array, so each row needs to be allocated (cols)
+    for (int i = 0; i < 10; i++) {
+        source[i] = (float *) calloc(2, sizeof(float));
+        sink[i]   = (float *) calloc(2, sizeof(float));
+		heat[i]   = (float *) calloc(2, sizeof(float));
+    }
+}
+
 void *readMouseThread(void *arg) {
-	printf("entering launched thread");
+	unsigned char white = 0b11111111;
+	unsigned char black = 0b00000000;
+
+	printf("entering mouse thread \n");
     int fd2, bytes_mouse;
     unsigned char data[3];
     const char *pDevice = "/dev/input/mice";
@@ -18,45 +42,133 @@ void *readMouseThread(void *arg) {
 	int flags = fcntl(fd2, F_GETFL, 0);
 	fcntl(fd2, F_SETFL, flags | O_NONBLOCK); 
 	
+	// initialize parameters
     signed char x, y;
-	int x_coord,y_coord = 0;
-	int left_click =0;
-    int right_click =0;
-	float source [10][2]; //just put 10 to see if it works
-	int incr_so = 0;
-	float sink [10][2]; //just put 10 to see if it works
-	int incr_si = 0;
+	int x_coord = 20; 
+	int y_coord = 20;
+	int left_click 		 = 0;
+    int right_click 	 = 0;
+	
+	// arrays that can be filledby users & sent to FPGA through dual SRAM block
+	allocateGridResources();
+
+	// iteratiors
+	int sinkIt = 0;
+	int sourIt = 0;
+	int heatIt = 0;
 
     while (1) {
-
-        bytes_mouse = read(fd2, data, sizeof(data));
+		bytes_mouse = read(fd2, data, sizeof(data));
 
         if(bytes_mouse > 0)
         {
+			// erase old cursor
 			VGA_Hline(0,y_coord,640,black);
 			VGA_Vline(x_coord,0,480,black);
 
-            left_click = data[0] & 0x1;
+            left_click  = data[0] & 0x1;
             right_click = data[0] & 0x2;
             
             x = data[1];
             y = data[2];
 
+			// printf(" x = %d, y = %d === ", (int)x, (int)y);
+
 			if( (x_coord + (int) x)<640 && (x_coord + (int) x) >= 0 ) { x_coord += (int) x; }
 			if( (y_coord - (int) y)<480 && (y_coord - (int) y) >= 0 ) { y_coord -= (int) y; }
 
-			//draw cursor
-			VGA_Hline(0,y_coord,640,white);
-			VGA_Vline(x_coord,0,480,white);
+			// printf(" x = %d, y = %d \n", (int)x_coord, (int)y_coord);
+
+			// draw new cursor
+			VGA_Hline(0,(int)y_coord,640,white);
+			VGA_Vline((int)x_coord,0,480,white);
+
+			// mark as heat source or sink and send to FPGA
+			if (left_click == 1) {
+				int selectedType;
+				int change = 0;
+				
+				// wait until user types new max iterations value
+				printf("Source or Sink? (1 or 2) \n");
+				while (change == 0) { if (scanf("%d", &selectedType) == 1 ) change = 1; }
+				
+				if (selectedType == 1) { 	// SOURCE
+					source[sourIt][0] =  x_coord;  
+					source[sourIt][1] =  y_coord;
+
+					sourIt = sourIt + 1;
+					
+					printf("Making Source: \n");
+					for (int i = 0; i < sourIt; ++i) {
+						for (int j = 0; j < 2; ++j) {
+							printf("%f ", source[i][j]);
+						}
+						printf("\n");
+					}
+				} 
+				else if (selectedType == 2 ) {		// SINK
+					sink[sinkIt][0] =  x_coord;
+					sink[sinkIt][1] =  y_coord;
+
+					sinkIt = sinkIt + 1;
+
+					printf("Making Sink: \n");
+					for (int i = 0; i < sinkIt; ++i) {
+						for (int j = 0; j < 2; ++j) {
+							printf("%f ", sink[i][j]);
+						}
+						printf("\n");
+					}
+				} 
+				else {
+					printf("Invalid Input");
+				}
+			}
         }
-		usleep(17000);
+		usleep(delay);
     }
 }
 
-float delay = 10000;	// default delay value
-int pause_sys = 0;
+void *sendDataThread(void *arg) {
+	printf("entering data send thread");
+	int count = 0;
+    while(count++ < 1000) 
+	{
+		int x1, y1, x2, y2, color ;
+		// sram buffer
+		// addr=0 start bit
+		// addr=1 x1, addr=2 y1
+		// addr=3 x2, addr=4 y2
+		// addr=5 color
+		// query for x1,y1,x2,y2, color(1-byte hex)
+		//scanf("%d %d %d %d %d", &x1, &y1, &x2, &y2, &color);
+		//printf("data entered\n\r");
+		x1 = rand() & 0x7f;
+		x2 = x1 + (rand() & 0x7f);
+		y1 = (rand() & 0xff) ;
+		y2 = y1 + (rand() & 0xff) ;
+		color = rand() & 0xff ;
+		// // start the timer
+		// gettimeofday(&t1, NULL);
+		// // set up parameters
+		// *(sram_ptr+1) = x1;
+		// *(sram_ptr+2) = y1;
+		// *(sram_ptr+3) = x2;
+		// *(sram_ptr+4) = y2;
+		// *(sram_ptr+5) = color;
+		// *(sram_ptr) = 1; // the "data-ready" flag
+	
+		// // wait for FPGA to zero the "data_ready" flag
+		// while (*(sram_ptr)==1) ;
+		
+		// note that this version of VGA_disk has THROTTLED pixel write disabled
+		VGA_box (x1+320, y1, x2+320, y2, color) ;
+		
+	}
+}
 
 void *readKeyboardThread(void *arg) {
+	printf("entering keyboard thread\n");
     fcntl(STDIN_FILENO, F_SETFL, (int)fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
 	fd_set read_message;
 
@@ -70,27 +182,26 @@ void *readKeyboardThread(void *arg) {
 
         struct timeval tv;
         tv.tv_sec = 0;
-        tv.tv_usec = 0;	// formally set to 100
+        tv.tv_usec = 0;
 
         // check the file with a timeout time of 0 to perform non-blocking task of displaying 
         int select_result = select(STDIN_FILENO + 1, &read_message, NULL, NULL, &tv);
 
-        //printf("Are we here");
         // if a new char was read, check it
         if (select_result > 0) {
             char c;
             int read_result = read(STDIN_FILENO, &c, sizeof(c));
 
-             // only fully ready message if pressed enter
-             // else just add to the buffer and continue
+            // only fully ready message if pressed enter
+            // else just add to the buffer and continue
             if (c == '\n') {
                 buf[buf_index] = '\0';
                 
-				 // Commands for "stop, go, speed up, slow down" 
+				// Commands for "stop, go, speed up, slow down" 
 			    if      (strcmp(buf, "stop") == 0)  pause_sys = 1;
                 else if (strcmp(buf, "go"  ) == 0)  pause_sys = 0;
-         	  	else if (strcmp(buf, "w"   ) == 0) delay = (delay / 10 < 0.0001) ? 0.0001 : delay / 10;
-				else if (strcmp(buf, "e"   ) == 0) delay = (delay * 10 >= FLT_MAX / 10) ? FLT_MAX / 10 : delay * 10;  
+         	  	else if (strcmp(buf, "w"   ) == 0)  delay = (delay / 10 < 0.0001) ? 0.0001 : delay / 10;
+				else if (strcmp(buf, "s"   ) == 0)  delay = (delay * 10 >= FLT_MAX / 10) ? FLT_MAX / 10 : delay * 10;  
                     
 				// since entire buffer has been read, set index back to 0 to overwrite previous values
 				buf_index = 0;
@@ -101,30 +212,22 @@ void *readKeyboardThread(void *arg) {
 				buf_index++;
 			}
         }
-		usleep(17000);
-
-    } //while loop
-} //keyboard thread
+		usleep(delay);
+    }
+}
 
 void *plotHeatThread(void *arg) {
+	printf("entering plot thread\n");
 	while(1){
-			simulate();
-
-			for (int i = 1; i < grid_size - 1; i++) {
-				for (int j = 1; j < grid_size - 1; j++) {
-					float heat = currGrid[i][j];
-					int colorIndex = (int)(heat * (numColors - 1));
-					colorIndex = fmax(0, fmin(numColors - 1, colorIndex));
-
-					plotPoint(i, j, colorIndex);
-				}
+		simulate();
+		for (int i = 1; i < grid_size - 1; i++) {
+			for (int j = 1; j < grid_size - 1; j++) {
+				float heat = currGrid[i][j];
+				int colorIndex = (int)(heat * (numColors - 1));
+				colorIndex = fmax(0, fmin(numColors - 1, colorIndex));
+				plotPoint(i, j, colorIndex);
 			}
-
-			usleep(delay);
 		}
-
-		// free memory when program ends
-		freeResources();
-		return 0;
-
+		usleep(delay);
+	}
 }
