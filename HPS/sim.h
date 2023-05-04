@@ -1,5 +1,8 @@
 #pragma once
 
+// #include <cstddef>
+#include <stdlib.h>
+
 // define constants
 #define DELTA_T 0.1
 #define ALPHA 0.8
