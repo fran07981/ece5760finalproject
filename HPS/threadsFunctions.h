@@ -137,7 +137,7 @@ void *sendDataThread(void *arg) {
     while(1) 
 	{
 		if (send == 1) {	
-			printf(" ~sending first data value~ \n\n");
+			printf(" ~sending data~ \n\n");
 			uint16_t sourceVal =  10;
 			uint16_t heatVal   =   5;
 			int8_t   sinkVal   = -10;
@@ -151,13 +151,14 @@ void *sendDataThread(void *arg) {
 			// 1st value in the M10K block is the "data-ready" flag
 			// 2nd value in the M10K block is the # of values? (still deciding on this or using an )
 			
-			printf("  Adding source: ");
-			for (int i = 0; i < sourIt; ++i) {
-				for (int j = 0; j < 2; ++j) {
-					printf("    %d ", source[i][j]);
-				}
-				printf("\n");
-			}
+			//----------------------------------------------------------------
+			// printf("  Adding source: ");
+			// for (int i = 0; i < sourIt; ++i) {
+			// 	for (int j = 0; j < 2; ++j) {
+			// 		printf("    %d ", source[i][j]);
+			// 	}
+			// 	printf("\n");
+			// }
 
 			for (int i = 0; i < sourIt; ++i) {	
 				uint32_t x_coord = source[i][0] << 20;
@@ -165,21 +166,22 @@ void *sendDataThread(void *arg) {
 				uint32_t value   = static_cast<uint8_t>(sourceVal);
 
 				uint32_t sendValue = x_coord | y_coord | value;
-				printf(" x: %x y: %x val: %x sent: %x \n", x_coord, y_coord, value, sendValue);
+				// printf(" x: %08x y: %08x val: %08x sent: %08x \n", x_coord, y_coord, value, sendValue);
 				*( sram_ptr + i + 2 ) = sendValue;
 			}
 
-			printf("  Adding sink: ");
-			for (int i = 0; i < sourIt; ++i) {
-				for (int j = 0; j < 2; ++j) {
-					printf("    %d ", sink[i][j]);
-				}
-				printf("\n");
-			}
+			// Adding source: x = 181 y = 233 : in hex : x = b5 and y = e9 
 
+			// x: b500000 y: e900 val: a sent: b50e90a = 0B5|E90|A 
 			
-			// Adding source:181 233 
-			// x: b500000 y: e900 val: a sent: b50e90a
+			//----------------------------------------------------------------
+			// printf("  Adding sink: ");
+			// for (int i = 0; i < sourIt; ++i) {
+			// 	for (int j = 0; j < 2; ++j) {
+			// 		printf("    %d ", sink[i][j]);
+			// 	}
+			// 	printf("\n");
+			// }
 
 			for (int i = 0; i < sinkIt; ++i) {	
 				uint32_t x_coord = sink[i][0] << 20;
@@ -191,9 +193,11 @@ void *sendDataThread(void *arg) {
 				*( sram_ptr + i + 2 + sourIt) = sendValue;
 			}
 			
+			//----------------------------------------------------------------
 			*( sram_ptr ) = 1; 			// "data-ready" flag
 			while (*(sram_ptr)==1);		// wait for FPGA to zero the "data_ready" flag
 			send = 0;
+			printf(" ~done sending~ \n\n");
 		}
 		usleep(delay);
 	}
