@@ -176,6 +176,11 @@ void *sendDataThread(void *arg) {
 				}
 				printf("\n");
 			}
+
+			
+			// Adding source:181 233 
+			// x: b500000 y: e900 val: a sent: b50e90a
+
 			for (int i = 0; i < sinkIt; ++i) {	
 				uint32_t x_coord = sink[i][0] << 20;
 				uint32_t y_coord = sink[i][1] << 8;
