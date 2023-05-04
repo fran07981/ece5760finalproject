@@ -6,7 +6,7 @@
 #include "sim.h"
 
 float delay = 10000;	// default delay value
-int pause_sys = 0;
+int   paused = 0;
 
 float **source = NULL;
 float **sink = NULL;
@@ -132,36 +132,44 @@ void *readMouseThread(void *arg) {
 void *sendDataThread(void *arg) {
 	printf("entering data send thread");
 	int count = 0;
-    while(count++ < 1000) 
+    while(1) 
 	{
-		int x1, y1, x2, y2, color ;
-		// sram buffer
-		// addr=0 start bit
-		// addr=1 x1, addr=2 y1
-		// addr=3 x2, addr=4 y2
-		// addr=5 color
-		// query for x1,y1,x2,y2, color(1-byte hex)
-		// scanf("%d %d %d %d %d", &x1, &y1, &x2, &y2, &color);
-		// printf("data entered\n\r");
-		x1 = rand() & 0x7f;
-		x2 = x1 + (rand() & 0x7f);
-		y1 = (rand() & 0xff) ;
-		y2 = y1 + (rand() & 0xff) ;
-		color = rand() & 0xff ;
+		if (paused == 0) {	
+			int sourceVal =  10;
+			int heatVal   =   5;
+			int sinkVal   = -10;
+			
+			// y = 0-479 (8  bits ->  512) 12
+			// x = 0-639 (10 bits -> 1024) 12
+			// val = -100 - 100 (4 bits + 1 sign bit) 8 bits 
+			// 32 bits: |0000|0000|0000 | 0000|0000|0000 | 0000|0000
+			//		    [-------X-------] [-------Y------] [--VAL--]
+
+			// TODO:: FIGURE OUT SECTION BELOW:::
+			for (int i = 0; i < sourIt; ++i) {
+				unsigned short x_coord = static_cast<unsigned short>( source[i][1] * 8.0f);
+				unsigned short y_coord = static_cast<unsigned short>( source[i][1] * 8.0f);
+				unsigned short value   = static_cast<unsigned short>( sourceVal    * 4.0f);
+
+				
+			}
+
+			
+			r = r << 5;
+			g = g << 2;
+			b = b ; 
+			unsigned short pixel_color = b | g | r;
+			
+			// set up parameters
+			*( sram_ptr + 1 ) = x1;
+			*( sram_ptr + 2 ) = y1;
+			*( sram_ptr + 3 ) = x2;
+			*( sram_ptr + 4 ) = y2;
+			*( sram_ptr + 5 ) = color;
+			*( sram_ptr ) = 1; 			// the "data-ready" flag
 		
-		// set up parameters
-		*(sram_ptr+1) = x1;
-		*(sram_ptr+2) = y1;
-		*(sram_ptr+3) = x2;
-		*(sram_ptr+4) = y2;
-		*(sram_ptr+5) = color;
-		*(sram_ptr) = 1; // the "data-ready" flag
-	
-		// wait for FPGA to zero the "data_ready" flag
-		while (*(sram_ptr)==1);
-		
-		// note that this version of VGA_disk has THROTTLED pixel write disabled
-		// VGA_box (x1+320, y1, x2+320, y2, color) ;
+			while (*(sram_ptr)==1);		// wait for FPGA to zero the "data_ready" flag
+		}
 	}
 }
 
@@ -196,8 +204,8 @@ void *readKeyboardThread(void *arg) {
                 buf[buf_index] = '\0';
                 
 				// Commands for "stop, go, speed up, slow down" 
-			    if      (strcmp(buf, "stop") == 0)  pause_sys = 1;
-                else if (strcmp(buf, "go"  ) == 0)  pause_sys = 0;
+			    if      (strcmp(buf, "stop") == 0)  paused = 1;
+                else if (strcmp(buf, "go"  ) == 0)  paused = 0;
          	  	else if (strcmp(buf, "w"   ) == 0)  delay = (delay / 10 < 0.0001) ? 0.0001 : delay / 10;
 				else if (strcmp(buf, "s"   ) == 0)  delay = (delay * 10 >= FLT_MAX / 10) ? FLT_MAX / 10 : delay * 10;  
                     
@@ -220,7 +228,7 @@ void *plotHeatThread(void *arg) {
 	grid_size = 100;
     allocateResources();
     intializeGrid();
-	
+
 	while(1){
 		simulate();
 		for (int i = 1; i < grid_size - 1; i++) {
