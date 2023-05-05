@@ -142,9 +142,9 @@ void *sendDataThread(void *arg) {
 			uint16_t heatVal   =   5;
 			int8_t   sinkVal   = -10;
 			
-			// y = 0-479 (9  bits ->  512) 12
-			// x = 0-639 (10 bits -> 1024) 12
-			// val = -100 - 100 (4 bits + 1 sign bit) 8 bits 
+			// y   =    0 : 479 (9  bits ->  512    ) 12 bits
+			// x   =    0 : 639 (10 bits -> 1024    ) 12 bits
+			// val = -128 : 128 (7 bits + 1 sign bit) 8  bits 
 			// 32 bits: |0000|0000|0000 | 0000|0000|0000 | 0000|0000
 			//		    [-------X-------] [-------Y------] [--VAL--]
 
@@ -172,7 +172,7 @@ void *sendDataThread(void *arg) {
 
 			// Adding source: x = 181 y = 233 : in hex : x = b5 and y = e9 
 
-			// x: b500000 y: e900 val: a sent: b50e90a = 0B5|E90|A 
+			// x: b500000 y: e900 val: a sent: b50e90a = 0B5|0E9|0A 
 			
 			//----------------------------------------------------------------
 			// printf("  Adding sink: ");
@@ -194,7 +194,9 @@ void *sendDataThread(void *arg) {
 			}
 			
 			//----------------------------------------------------------------
-			*( sram_ptr ) = 1; 			// "data-ready" flag
+			uint32_t num = sinkIt + sourIt;
+			*( sram_ptr + 1) = num;	// tell FPGA how many sources we have
+			*( sram_ptr ) 	 = 1; 		// "data-ready" flag
 			while (*(sram_ptr)==1);		// wait for FPGA to zero the "data_ready" flag
 			send = 0;
 			printf(" ~done sending~ \n\n");
