@@ -1,13 +1,13 @@
-Analysis & Synthesis Status : Successful - Sat May 06 15:58:10 2023
+Analysis & Synthesis Status : Successful - Sat May 06 18:00:36 2023
 Quartus Prime Version : 18.1.0 Build 625 09/12/2018 SJ Lite Edition
 Revision Name : DE1_SoC_Computer
 Top-level Entity Name : DE1_SoC_Computer
 Family : Cyclone V
 Logic utilization (in ALMs) : N/A
-Total registers : 5752
+Total registers : 27538
 Total pins : 368
 Total virtual pins : 0
-Total block memory bits : 2,739,584
+Total block memory bits : 4,574,592
 Total DSP Blocks : 6
 Total HSSI RX PCSs : 0
 Total HSSI PMA RX Deserializers : 0

@@ -322,65 +322,84 @@ module DE1_SoC_Computer (
 	// --------------------------------------
 	// GENERATE COLUMNS HERE
 	// --------------------------------------
-	// localparam n = 100;	// number of columns
+	localparam n = 100;	// number of columns
 
-	// reg [( n * 32 - 1 ):0] 	vga_addr; 		// n = # of iterators, second [] is length of data (32 bits)
-	// reg [( n * 32 - 1 ):0] 	vga_pxl_clr; 	// n = # of iterators, [] is length of data (32 bits)
+	reg [( n * 32 - 1 ):0] 	vga_addr; 		// n = # of iterators, second [] is length of data (32 bits)
+	reg [( n * 32 - 1 ):0] 	vga_pxl_clr; 	// n = # of iterators, [] is length of data (32 bits)
 
-	// reg  [n - 1:0] inter_select; 	// tels us which iterator is ready to be plotted via flag
-	// wire [n - 1:0] comp_flag ;		// return to nth iterator to move to next point
+	reg  [n - 1:0] inter_select; 	// tels us which iterator is ready to be plotted via flag
+	wire [n - 1:0] comp_flag ;		// return to nth iterator to move to next point
+	reg  [n - 1:0] inter_done;
+	wire 		inter_start;
 
-	// genvar i;
-	// generate
-	// 	for (i = 0; i < n; i = i + 1) begin : gen_block
-	// 		wire data_sig = col_select[i];
-	// 		wire [9:0] x;
+	genvar i;
+	generate
+		for (i = 0; i < n; i = i + 1) begin : gen_block
+			wire data_sig = col_select[i];
+			wire [9:0] x;
 
-	// 		i_to_binary_ew (
-	// 			.i(i),
-	// 			.clk(CLOCK_50),
-	// 			.x(x)
-	// 		);
+			i_to_binary_ew (
+				.i(i),
+				.clk(CLOCK_50),
+				.x(x)
+			);
 
-	// 		wire y = row_select;
-	// 		reg  [5:0] state = 0;
+			wire y = row_select;
+			reg  [5:0] state = 0;
 
-	// 		always @(posedge CLOCK_50) begin
+			
 
-	// 			if (state == 0 && data_sig == 1'd1) begin
-	// 				// compute address to write color too
-	// 				vga_addr   [ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= vga_out_base_address + {22'b0, x} + ({22'b0, y} * 640); 
-	// 				vga_pxl_clr[ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= pixel_color;
-	// 				inter_select[i] <= 1'b1;	// tell arbitrer we are ready to plot
-	// 				state <= 6'd1;						// move to state that waits for arbitrer to finish
-	// 			end
-	// 			else begin
-	// 				// ===== STATE 1 =====
-	// 				if (state == 6'd1) begin
-	// 					if ( comp_flag[i] == 1'b1 ) begin
-	// 						inter_select[i] <= 1'b0;	// tell arbitrer we are done to plotting
-	// 						state 					<= 6'd2;	// move to draw next point 
-	// 					end
-	// 					else begin
-	// 						state <= 6'd1;
-	// 					end
-	// 				end
-	// 				// ===== STATE 2 =====
-	// 				else if (state == 6'd2) begin
-	// 					return_sig[i]	 <= 1'd1;		// tell HPS reader we finished
-	// 					state          <= 6'd3;
-	// 				end
-	// 				// ===== STATE 3 =====
-	// 				else if (state == 6'd3) begin
-	// 					if (data_sig == 0) begin
-	// 						state <= 6'd0;
-	// 					end
-	// 					state <= 6'd3;
-	// 				end
-	// 			end
-	// 		end
-	// 	end
-	// endgenerate
+			always @(posedge CLOCK_50) begin
+
+				if (state == 0 && data_sig == 1'd1) begin
+					// compute address to write color too
+					vga_addr   [ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= vga_out_base_address + {22'b0, x + 10'd100} + ({22'b0, y+ 10'd100} * 640); 
+					vga_pxl_clr[ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= pixel_color;
+					inter_select[i] <= 1'b1;	// tell arbitrer we are ready to plot
+					state <= 6'd1;						// move to state that waits for arbitrer to finish
+				end
+				else begin
+					// ===== STATE 1 =====
+					if (state == 6'd1) begin
+					 	if ( comp_flag[i] == 1'b1 ) begin
+							inter_select[i] <= 1'b0;	// tell arbitrer we are done to plotting
+							state 					<= 6'd2;	// move to draw next point 
+						end
+						else begin
+							state <= 6'd1;
+						end
+					end
+					// ===== STATE 2 =====
+					else if (state == 6'd2) begin
+						return_sig[i]	 <= 1'd1;		// tell HPS reader we finished
+						state          <= 6'd3;
+					end
+					// ===== STATE 3 =====
+					else if (state == 6'd3) begin
+						if (data_sig == 0) begin
+							state <= 6'd0;
+							return_sig[i] <= 1'd0;
+						end
+						state <= 6'd3;
+					end
+				end
+			end
+		end
+	endgenerate
+
+	arbriter genArbri( 
+		.vga_addr			(vga_addr),
+		.vga_pxl_clr		(vga_pxl_clr),
+		.inter_select		(inter_select),
+		.inter_done			(inter_done),
+		.clk				(CLOCK_50),
+		.comp_flag			(comp_flag),
+		.vga_sram_address	(vga_sram_address),
+		.vga_sram_write		(vga_sram_write),
+		.vga_sram_writedata	(vga_sram_writedata),
+		.inter_start		(inter_start),
+		.reset				(~KEY[0])
+	);
 
 	//=======================================================
 	//  Structural coding

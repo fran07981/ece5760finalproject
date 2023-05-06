@@ -4,12 +4,11 @@
 
 // take turns drawing each pixel in the column to the VGA  
 
-module arbriter ( vga_addr, vga_pxl_clr, col_select, col_done, clk, comp_flag, 
-				  vga_sram_address, vga_sram_write, vga_sram_writedata, inter_start, KEY);
+module arbriter ( vga_addr, vga_pxl_clr, inter_select, inter_done, clk, comp_flag, 
+				  vga_sram_address, vga_sram_write, vga_sram_writedata, inter_start, reset);
 	// number of iterators we currently have
-	localparam n = 1;
+	localparam n = 21;
 
-	input [3:0]	KEY;
 	input	 	clk;
 
 	// Communicate with individual columns with these inputs	
@@ -22,7 +21,7 @@ module arbriter ( vga_addr, vga_pxl_clr, col_select, col_done, clk, comp_flag,
 	output wire [n-1:0] comp_flag;		// return to nth iterator to move to next point
 	output wire 		inter_start;    // inter_start: tells columns to start (beginning of arbiter state machine)
 
-	input 				reset 			// hps_reset: tells us HPS sent a reset
+	input 				reset; 			// hps_reset: tells us HPS sent a reset
 
 	// Write to VGA Data with these wires
 	output wire [31:0] 	vga_sram_address;
@@ -34,7 +33,9 @@ module arbriter ( vga_addr, vga_pxl_clr, col_select, col_done, clk, comp_flag,
 	reg [ 7 :0 ]  vga_sram_writedata_;
 	reg 		  vga_sram_write_;
 	reg [n - 1:0] comp_flag_;
-	reg 	  	  inter_start; //inter_start_;
+	
+	reg inter_start_;
+	
 	reg [2:0] 	  state_arbr;
 	//reg 	  	  hps_done_;
 	reg [31:0] 	  timer;
@@ -45,33 +46,14 @@ module arbriter ( vga_addr, vga_pxl_clr, col_select, col_done, clk, comp_flag,
 	always @(posedge clk) begin
 
 		// ===== STATE 0 =====
-		if ( state_arbr == 3'd0 || hps_reset) begin
-			// button gets pressed 
-			if (~KEY[0]) begin
-				state_arbr <= 3'd1;
-			end
-			
-			// hanshake HPS reset flag
-			// raise HPS_done so that the HPS knows we good
-			if ( reset ) begin 
-				//hps_send_done_ <= 1'b0;
-				//hps_done_      <= 1'b1;
-				state_arbr 	   <= 3'd1;
-			end
-
-			// no reset signal or button pressed yet! stay here
-			else begin
-				state_arbr <= 3'd0;
-			end
+		if ( state_arbr == 3'd0 || reset) begin
+			state_arbr <= 3'd1;
 		end
 
 		// ===== STATE 1 =====
 		else if ( state_arbr == 3'd1 ) begin
-			inter_start_ <= 1'b1; // tell mandels to start
-			state_arbr   <= 3'd2; // move to state 2
-
-			// tell HPS we are not done plotting yet
-			//hps_send_done_ <= 1'b0;
+			inter_start_ <= 1'b1; 
+			state_arbr   <= 3'd2; 
 		end
 
 		// ===== STATE 2 =====
@@ -82,58 +64,156 @@ module arbriter ( vga_addr, vga_pxl_clr, col_select, col_done, clk, comp_flag,
 
 		// ===== STATE 3 =====
 		else if ( state_arbr == 3'd3 ) begin
-			if ( ~( col_select == 0 ) ) begin
-				if ( col_select[0] == 1'b1 ) begin		// if this first iterator is ready, plot it
+			if ( ~( inter_select == 0 ) ) begin
+				if ( inter_select[0] == 1'b1 ) begin		// if this first iterator is ready, plot it
 					vga_sram_write_ 	<= 1'b1;
 					vga_sram_address_ 	<= vga_addr   [ ((0+1)*32-1) : (((0+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
 					vga_sram_writedata_ <= vga_pxl_clr[ ((0+1)*32-1) : (((0+1)*32-1) - 31) ];
 					comp_flag_[0]  		<= 1'b1;			// raise comp flag
 					state_arbr			<= 3'd4;			// move to state 3 to remove updated flag
 				end
-				// else if ( inter_select[1] == 1'b1 ) begin
-				// 	vga_sram_write_ 	<= 1'b1;
-				// 	vga_sram_address_ 	<= vga_addr	  [ ((1+1)*32-1) : (((1+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
-				// 	vga_sram_writedata_ <= vga_pxl_clr[ ((1+1)*32-1) : (((1+1)*32-1) - 31) ];
-				// 	comp_flag_[1] 		<= 1'b1;	
-				// 	state_arbr			<= 3'd4;	
-				// end
-				// else if ( inter_select[2] == 1'b1 ) begin
-				// 	vga_sram_write_ 	<= 1'b1;
-				// 	vga_sram_address_ 	<= vga_addr	  [ ((2+1)*32-1) : (((2+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
-				// 	vga_sram_writedata_ <= vga_pxl_clr[ ((2+1)*32-1) : (((2+1)*32-1) - 31) ];
-				// 	comp_flag_[2] 		<= 1'b1;	
-				// 	state_arbr			<= 3'd4;	
-				// end
-				// else if ( inter_select[3] == 1'b1 ) begin
-				// 	vga_sram_write_ 	<= 1'b1;
-				// 	vga_sram_address_ 	<= vga_addr	  [ ((3+1)*32-1) : (((3+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
-				// 	vga_sram_writedata_ <= vga_pxl_clr[ ((3+1)*32-1) : (((3+1)*32-1) - 31) ];
-				// 	comp_flag_[3] 		<= 1'b1;	
-				// 	state_arbr			<= 3'd4;	
-				// end
-				// else if ( inter_select[4] == 1'b1 ) begin
-				// 	vga_sram_write_ 	<= 1'b1;
-				// 	vga_sram_address_ 	<= vga_addr	  [ ((4+1)*32-1) : (((4+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
-				// 	vga_sram_writedata_ <= vga_pxl_clr[ ((4+1)*32-1) : (((4+1)*32-1) - 31) ];
-				// 	comp_flag_[4] 		<= 1'b1;	
-				// 	state_arbr			<= 3'd4;	
-				// end
-				// else if ( inter_select[5] == 1'b1 ) begin
-				// 	vga_sram_write_ 	<= 1'b1;
-				// 	vga_sram_address_ 	<= vga_addr	  [ ((5+1)*32-1) : (((5+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
-				// 	vga_sram_writedata_ <= vga_pxl_clr[ ((5+1)*32-1) : (((5+1)*32-1) - 31) ];
-				// 	comp_flag_[5] 		<= 1'b1;	
-				// 	state_arbr			<= 3'd4;	
-				// end
-				// else if ( inter_select[6] == 1'b1 ) begin
-				// 	vga_sram_write_ 	<= 1'b1;
-				// 	vga_sram_address_ 	<= vga_addr	  [ ((6+1)*32-1) : (((6+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
-				// 	vga_sram_writedata_ <= vga_pxl_clr[ ((6+1)*32-1) : (((6+1)*32-1) - 31) ];
-				// 	comp_flag_[6] 		<= 1'b1;	
-				// 	state_arbr			<= 3'd4;	
-				// end
+				else if ( inter_select[1] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((1+1)*32-1) : (((1+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((1+1)*32-1) : (((1+1)*32-1) - 31) ];
+					comp_flag_[1] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[2] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((2+1)*32-1) : (((2+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((2+1)*32-1) : (((2+1)*32-1) - 31) ];
+					comp_flag_[2] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[3] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((3+1)*32-1) : (((3+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((3+1)*32-1) : (((3+1)*32-1) - 31) ];
+					comp_flag_[3] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[4] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((4+1)*32-1) : (((4+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((4+1)*32-1) : (((4+1)*32-1) - 31) ];
+					comp_flag_[4] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[5] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((5+1)*32-1) : (((5+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((5+1)*32-1) : (((5+1)*32-1) - 31) ];
+					comp_flag_[5] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[6] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((6+1)*32-1) : (((6+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((6+1)*32-1) : (((6+1)*32-1) - 31) ];
+					comp_flag_[6] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[7] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((7+1)*32-1) : (((7+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((7+1)*32-1) : (((7+1)*32-1) - 31) ];
+					comp_flag_[7] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[8] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((8+1)*32-1) : (((8+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((8+1)*32-1) : (((8+1)*32-1) - 31) ];
+					comp_flag_[8] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[9] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((9+1)*32-1) : (((9+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((9+1)*32-1) : (((9+1)*32-1) - 31) ];
+					comp_flag_[9] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[10] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((10+1)*32-1) : (((10+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((10+1)*32-1) : (((10+1)*32-1) - 31) ];
+					comp_flag_[10] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[11] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((11+1)*32-1) : (((11+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((11+1)*32-1) : (((11+1)*32-1) - 31) ];
+					comp_flag_[11] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[12] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((12+1)*32-1) : (((12+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((12+1)*32-1) : (((12+1)*32-1) - 31) ];
+					comp_flag_[12] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[13] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((13+1)*32-1) : (((13+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((13+1)*32-1) : (((13+1)*32-1) - 31) ];
+					comp_flag_[13] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[14] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((14+1)*32-1) : (((14+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((14+1)*32-1) : (((14+1)*32-1) - 31) ];
+					comp_flag_[14] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[15] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((15+1)*32-1) : (((15+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((15+1)*32-1) : (((15+1)*32-1) - 31) ];
+					comp_flag_[15] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[16] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((16+1)*32-1) : (((16+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((16+1)*32-1) : (((16+1)*32-1) - 31) ];
+					comp_flag_[16] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[17] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((17+1)*32-1) : (((17+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((17+1)*32-1) : (((17+1)*32-1) - 31) ];
+					comp_flag_[17] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[18] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((18+1)*32-1) : (((18+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((18+1)*32-1) : (((18+1)*32-1) - 31) ];
+					comp_flag_[18] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[19] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((19+1)*32-1) : (((19+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((19+1)*32-1) : (((19+1)*32-1) - 31) ];
+					comp_flag_[19] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
+				else if ( inter_select[20] == 1'b1 ) begin
+					vga_sram_write_ 	<= 1'b1;
+					vga_sram_address_ 	<= vga_addr	  [ ((20+1)*32-1) : (((20+1)*32-1) - 31) ];		// send it just the bits from the ith iterator
+					vga_sram_writedata_ <= vga_pxl_clr[ ((20+1)*32-1) : (((20+1)*32-1) - 31) ];
+					comp_flag_[20] 		<= 1'b1;	
+					state_arbr			<= 3'd4;	
+				end
 			end
-			else if (inter_done == 7'd111_1111) begin		// ALL Iterators are done - 4'b11_11
+			else if (inter_done == 21'd1111_1111_1111_1111_1111_1) begin		// ALL Iterators are done - 4'b11_11
 				state_arbr <= 3'd5;
 			end
 			else begin 
@@ -143,27 +223,27 @@ module arbriter ( vga_addr, vga_pxl_clr, col_select, col_done, clk, comp_flag,
 
 		// ===== STATE 4 =====
 		else if ( state_arbr == 3'd4 ) begin
-			if ( comp_flag_[0] == 1'd1 ) begin
-				comp_flag_[0] <= 1'b0;	
-			end
-			else if ( comp_flag_[1] == 1'd1 ) begin	
-				comp_flag_[1] <= 1'b0;				
-			end
-			else if ( comp_flag_[2] == 1'd1 ) begin	
-				comp_flag_[2] <= 1'b0;				
-			end
-			else if ( comp_flag_[3] == 1'd1 ) begin	
-				comp_flag_[3] <= 1'b0;				
-			end 
-			else if ( comp_flag_[4] == 1'd1 ) begin	
-				comp_flag_[4] <= 1'b0;				
-			end 
-			else if ( comp_flag_[5] == 1'd1 ) begin	
-				comp_flag_[5] <= 1'b0;				
-			end 
-			else if ( comp_flag_[6] == 1'd1 ) begin	
-				comp_flag_[6] <= 1'b0;				
-			end 
+			if 		( comp_flag_[0 ] == 1'd1 ) comp_flag_[0 ] <= 1'b0;	
+			else if ( comp_flag_[1 ] == 1'd1 ) comp_flag_[1 ] <= 1'b0;
+			else if ( comp_flag_[2 ] == 1'd1 ) comp_flag_[2 ] <= 1'b0;
+			else if ( comp_flag_[3 ] == 1'd1 ) comp_flag_[3 ] <= 1'b0;
+			else if ( comp_flag_[4 ] == 1'd1 ) comp_flag_[4 ] <= 1'b0;
+			else if ( comp_flag_[5 ] == 1'd1 ) comp_flag_[5 ] <= 1'b0;
+			else if ( comp_flag_[6 ] == 1'd1 ) comp_flag_[6 ] <= 1'b0;
+			else if ( comp_flag_[7 ] == 1'd1 ) comp_flag_[7 ] <= 1'b0;
+			else if ( comp_flag_[8 ] == 1'd1 ) comp_flag_[8 ] <= 1'b0;
+			else if ( comp_flag_[9 ] == 1'd1 ) comp_flag_[9 ] <= 1'b0;
+			else if ( comp_flag_[10] == 1'd1 ) comp_flag_[10] <= 1'b0;
+			else if ( comp_flag_[11] == 1'd1 ) comp_flag_[11] <= 1'b0;
+			else if ( comp_flag_[12] == 1'd1 ) comp_flag_[12] <= 1'b0;
+			else if ( comp_flag_[13] == 1'd1 ) comp_flag_[13] <= 1'b0;
+			else if ( comp_flag_[14] == 1'd1 ) comp_flag_[14] <= 1'b0;
+			else if ( comp_flag_[15] == 1'd1 ) comp_flag_[15] <= 1'b0;
+			else if ( comp_flag_[16] == 1'd1 ) comp_flag_[16] <= 1'b0;
+			else if ( comp_flag_[17] == 1'd1 ) comp_flag_[17] <= 1'b0;
+			else if ( comp_flag_[18] == 1'd1 ) comp_flag_[18] <= 1'b0;
+			else if ( comp_flag_[19] == 1'd1 ) comp_flag_[19] <= 1'b0;
+			else if ( comp_flag_[20] == 1'd1 ) comp_flag_[20] <= 1'b0;
 
 			state_arbr <= 3'd3;	// return to state 2
 		end
@@ -203,7 +283,7 @@ module arbriter ( vga_addr, vga_pxl_clr, col_select, col_done, clk, comp_flag,
 	assign vga_sram_address   = vga_sram_address_; 
 	assign vga_sram_writedata = vga_sram_writedata_; 
 	assign comp_flag		  = comp_flag_; 
-	assign inter_start 		  = _start_;
+	assign inter_start 		  = inter_start_;
 	//assign hps_done 		  = hps_done_;
 	//assign hps_send_timer 	  = hps_send_timer_;
 	//assign hps_send_done 	  = hps_send_done_;
