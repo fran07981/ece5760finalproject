@@ -86,20 +86,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		.read_address	(u_read_addr),   	// addr we want to read
 		.we				(u_write_sig), 		// if we want to write we = 1'd1, else, we = 1'd0
 		.clk			(clk) );
-
-	// ==== U_PREV MEMORY BLOCK FOR COLUMN ====
-	reg	signed [31:0] u_prev_write_data;
-	reg	[row_bits:0]  u_prev_write_addr;
-	reg	[row_bits:0]  u_prev_read_addr;
-	reg	 	   		  u_prev_write_sig;
-	
-	M10K_256_32 u_prev( 
-		.q				(u_prev_read_data),
-		.d				(u_prev_write_data),
-		.write_address	(u_prev_write_addr), 
-		.read_address	(u_prev_read_addr),
-		.we				(u_prev_write_sig), 
-		.clk			(clk) );
 	
 	// ----------------- SATE MACHINE -----------------
 	// states 1,2 are for initializing all the memory blocks
@@ -143,11 +129,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 			u_write_addr <= current_row;
 			u_write_data <= temp;
 			u_write_sig  <= 1'd1;
-
-			// M10K block for u_prev is initially the same as u current 
-			u_prev_write_addr <= current_row;
-			u_prev_write_data <= temp;
-			u_prev_write_sig  <= 1'd1;
 
 			if ( current_row == bottom_row ) begin
 				u_reg_bottom <= temp;
@@ -199,9 +180,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 			
 			u_write_sig  	 <= 1'd0;
 
-			u_prev_read_addr <= current_row;
-			u_prev_write_sig <= 1'd0;
-
 			state 			 <= state_4;
 		end
 		// ------------------------------------------------------------------
@@ -217,7 +195,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 			u_up		  <= (current_row == top_row)    ? 0 : u_read_data;					// if node at top edge, 0 
 			u_down		  <= (current_row == bottom_row) ? 0 : u_reg_down; 				// if node at bottom edge
 			u_center	  <= (current_row == bottom_row) ? u_reg_bottom : u_reg_center; 	// if node is at bottom, grab from bottom register
-			u_center_prev <= u_prev_read_data; // At prev time step, just grab from block
 			
 			state 		  <= state_6;
 		end
@@ -230,10 +207,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 				u_reg_bottom <= u_next;
 				u_reg_down	 <= u_reg_bottom;
 
-				u_prev_write_addr <= current_row;
-				u_prev_write_data <= u_reg_bottom;
-				u_prev_write_sig  <= 1'd1;
-
 				u_reg_center <= u_up;
 
 				u_write_sig  <= 1'd0;
@@ -242,10 +215,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 				u_reg_bottom <= u_reg_bottom;
 				u_reg_down	 <= u_reg_down;
 				u_reg_center <= u_reg_center;
-
-				u_prev_write_addr <= current_row;
-				u_prev_write_data <= u_reg_center;
-				u_prev_write_sig  <= 1'd1;
 
 				u_write_addr <= current_row;
 				u_write_data <= u_next;
@@ -259,10 +228,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 				u_write_sig  <= 1'd1;
 
 				u_reg_center <= u_up;
-
-				u_prev_write_addr <= current_row;
-				u_prev_write_data <= u_reg_center;
-				u_prev_write_sig  <= 1'd1;
 
 				u_reg_down <= u_reg_center;
 			end

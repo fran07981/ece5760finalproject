@@ -9,13 +9,13 @@ z2
 cModel Technology
 dC:/programs/intelFPGA/18.1
 vbuild_column
-Z0 !s110 1683399618
+Z0 !s110 1683400995
 !i10b 1
-!s100 >=ehCmTB@b>1TG3ck0dTK1
-IVkg_jZH00B45:NddUiN[f2
+!s100 ;7`:4]N_TKAb[7LgLj==C0
+I1Qc<`@BE:n2N3W?M7Yj=R3
 Z1 VDg1SIo80bB@j0V0VzS_@n1
 Z2 dC:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests
-w1683399612
+w1683400989
 8C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/column.v
 FC:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/column.v
 L0 23
@@ -23,7 +23,7 @@ Z3 OV;L;10.5b;63
 r1
 !s85 0
 31
-Z4 !s108 1683399618.000000
+Z4 !s108 1683400995.000000
 !s107 compute.v|C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/column.v|
 !s90 -reportprogress|300|-work|work|-stats=none|C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/column.v|
 !i113 1
