@@ -6,9 +6,11 @@
 #include "VGAHelperFunctions.h"
 #include "sim.h"
 
-float delay = 10000;	// default delay value
-int   paused = 0;
-int   send = 0;
+float delay  	  = 10000;	// default delay value
+int   paused 	  = 0;
+int   send   	  = 0;
+int   source_mode = 0;
+int   sink_mode   = 0;
 
 int **source = NULL;
 int **sink = NULL;
@@ -21,12 +23,12 @@ int heatIt = 0;
 
 void allocateGridResources(){
     // define two grids (rows)
-    source = (int **) malloc(10 * sizeof(int *));
-    sink   = (int **) malloc(10 * sizeof(int *));
-	heat   = (int **) malloc(10 * sizeof(int *));
+    source = (int **) malloc(255 * sizeof(int *));
+    sink   = (int **) malloc(255 * sizeof(int *));
+	heat   = (int **) malloc(255 * sizeof(int *));
 
     // 2D array, so each row needs to be allocated (cols)
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 255; i++) {
         source[i] = (int *) calloc(2, sizeof(int));
         sink[i]   = (int *) calloc(2, sizeof(int));
 		heat[i]   = (int *) calloc(2, sizeof(int));
@@ -87,43 +89,28 @@ void *readMouseThread(void *arg) {
 
 			// mark as heat source or sink and send to FPGA
 			if (left_click == 1) {
-				int selectedType;
-				int change = 0;
-				
-				// wait until user types new max iterations value
-				printf("Source or Sink? (1 or 2) \n");
-				while (change == 0) { if (scanf("%d", &selectedType) == 1 ) change = 1; }
-				
-				if (selectedType == 1) { 	// SOURCE
+				if (source_mode == 1) { 			// SOURCE
 					source[sourIt][0] =  x_coord;  
 					source[sourIt][1] =  y_coord;
 
-					sourIt = sourIt + 1;
-					
 					printf("Making Source: \n");
-					for (int i = 0; i < sourIt; ++i) {
-						for (int j = 0; j < 2; ++j) {
-							printf("%d ", source[i][j]);
-						}
-						printf("\n");
+					for (int j = 0; j < 2; ++j) {
+						printf("%d ", source[sourIt][j]);
 					}
+
+					sourIt = sourIt + 1;
 				} 
-				else if (selectedType == 2 ) {		// SINK
+				else if (sink_mode == 1 ) {		// SINK
 					sink[sinkIt][0] =  x_coord;
 					sink[sinkIt][1] =  y_coord;
 
-					sinkIt = sinkIt + 1;
-
 					printf("Making Sink: \n");
-					for (int i = 0; i < sinkIt; ++i) {
-						for (int j = 0; j < 2; ++j) {
-							printf("%d ", sink[i][j]);
-						}
-						printf("\n");
+					for (int j = 0; j < 2; ++j) {
+						printf("%d ", sink[sinkIt][j]);
 					}
-				} 
-				else {
-					printf("Invalid Input");
+					printf("\n");
+
+					sinkIt = sinkIt + 1;
 				}
 			}
         }
@@ -236,12 +223,20 @@ void *readKeyboardThread(void *arg) {
                 buf[buf_index] = '\0';
                 
 				// Commands for "stop, go, speed up, slow down" 
-			    if      (strcmp(buf, "stop") == 0)  paused = 1;
-                else if (strcmp(buf, "go"  ) == 0)  paused = 0;
-         	  	else if (strcmp(buf, "w"   ) == 0)  delay = (delay / 10 < 0.0001) ? 0.0001 : delay / 10;
-				else if (strcmp(buf, "send") == 0)  send = 1;  
-				else if (strcmp(buf, "s"   ) == 0)  delay = (delay * 10 >= FLT_MAX / 10) ? FLT_MAX / 10 : delay * 10;  
+			    if      (strcmp(buf, "stop"  ) == 0)  paused = 1;
+                else if (strcmp(buf, "go"    ) == 0)  paused = 0;
+         	  	else if (strcmp(buf, "w"     ) == 0)  delay  = (delay / 10 < 0.0001) ? 0.0001 : delay / 10;
+				else if (strcmp(buf, "send"  ) == 0)  send   = 1;
+				else if (strcmp(buf, "s"     ) == 0)  delay  = (delay * 10 >= FLT_MAX / 10) ? FLT_MAX / 10 : delay * 10;  
 				
+				else if (strcmp(buf, "source") == 0) {
+					source_mode = 1;
+					sink_mode   = 0;
+				}
+				else if (strcmp(buf, "sink"  ) == 0) {
+					source_mode = 0;
+					sink_mode   = 1;
+				}
                     
 				// since entire buffer has been read, set index back to 0 to overwrite previous values
 				buf_index = 0;

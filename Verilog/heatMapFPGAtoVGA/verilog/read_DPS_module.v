@@ -1,5 +1,6 @@
 module read_DPS_module (clock, reset, sram_readdata, sram_writedata, sram_address, 
-                        sram_write, vga_sram_writedata, vga_sram_address, vga_sram_write, flag
+                        sram_write, vga_sram_writedata, vga_sram_address, vga_sram_write, flag,
+                        col_select, return_sig, row_select
 );
     input             clock, reset;
     input wire [31:0] sram_readdata;
@@ -11,6 +12,10 @@ module read_DPS_module (clock, reset, sram_readdata, sram_writedata, sram_addres
     output reg  [31:0] sram_writedata;
     output reg  [31:0] vga_sram_address;
 
+    output reg [99:0] col_select = 0; // one [] per column
+	output reg [9:0]  row_select = 0; // says which row number
+    input  reg [99:0] return_sig = 0; // one [] per column
+	
     // y   =    0 : 479 (9  bits ->  512    ) 12 bits
     // x   =    0 : 639 (10 bits -> 1024    ) 12 bits
     // val = -128 : 128 (7 bits + 1 sign bit) 8  bits 
@@ -26,9 +31,6 @@ module read_DPS_module (clock, reset, sram_readdata, sram_writedata, sram_addres
     output reg flag = 0;
     
     reg  [7 :0] state;
-    reg  [ 9:0] vga_x_cood, vga_y_cood;
-    reg  [ 7:0] pixel_color = 8'b11111111;
-    wire [31:0] vga_out_base_address = 32'h0000_0000 ;  // vga base addr
 
 	always @(posedge clock) begin // CLOCK_50
 
@@ -46,7 +48,6 @@ module read_DPS_module (clock, reset, sram_readdata, sram_writedata, sram_addres
                 sram_address <= 8'd0;
                 sram_write   <= 1'b0;
                 state        <= 8'd1;
-                flag         <= 0;
             end
             if (state == 8'd1) begin
                 state <= 8'd2;
@@ -101,31 +102,27 @@ module read_DPS_module (clock, reset, sram_readdata, sram_writedata, sram_addres
             end 
             if (state == 8'd10) begin
                 // SEND DATA TO CORRECT M10K BLOCK HERE
-
-                // ------------------ VGA WRITE --------------------
-                vga_sram_write     <= 1'b1;
-                vga_sram_address   <= vga_out_base_address + {22'b0, x} + ({22'b0, y} * 640); 
-                vga_sram_writedata <= pixel_color;
-                state              <= 8'd11;
-                // ------------ END VGA WRITE --------------------
+                col_select[x] = 1'd1; // one [] per column
+                row_select    = y; // says which row number
+                state <= 8'd11;
             end
             
             if (state == 8'd11) begin
-                if (count == vals) state <= 8'd12;      // TODO:FIX THIS ???? the == isn't working
+                if (return_sig[x] == 1'd1) state <= 8'd12;
+                else state <= 8'd10;
+            end
+
+            if (state == 8'd12) begin
+                if (count == vals) state <= 8'd13;
                 else state <= 8'd7;
             end
 
             // ------------------ RESET FLAG --------------------
-            if (state == 8'd12) begin
-                vga_sram_write  <= 1'b0;   // done writing to the VGA
-                sram_address    <= 8'd0;   // signal the HPS we are done
-                sram_writedata  <= 32'b0;
-                sram_write      <= 1'b1;
-                state           <= 8'd13;
-            end
-
             if (state == 8'd13) begin
-                state           <= 8'd13;
+                sram_address    <=  8'd0;   // signal the HPS we are done
+                sram_writedata  <= 32'b0;
+                sram_write      <=  1'b1;
+                state           <=  8'd0;   // go back down to state 0
             end
         end
 	end

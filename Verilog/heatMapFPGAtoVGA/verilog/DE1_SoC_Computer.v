@@ -1,4 +1,5 @@
-`include "helper_modules.v"
+// `include "helper_modules.v"
+// `include "read_DPS_module.v"
 
 module DE1_SoC_Computer (
 	////////////////////////////////////
@@ -326,8 +327,56 @@ module DE1_SoC_Computer (
 		.vga_sram_writedata	(vga_sram_writedata),
 		.vga_sram_address	(vga_sram_address),
 		.vga_sram_write		(vga_sram_write),
-		.flag				(flag)
+		.flag				(flag),
+		.col_select			(col_select),
+		.return_sig			(return_sig),
+		.row_select			(row_select)
 	);
+
+	reg [99:0] col_select = 0; // one [] per column
+	reg [99:0] return_sig = 0; // one [] per column
+	reg [9:0]  row_select = 0; // says which row number
+
+	reg  [ 7:0] pixel_color          =  8'b1111_1111;
+    wire [31:0] vga_out_base_address = 32'h0000_0000;  // vga base addr
+
+	localparam n = 100;
+	genvar i;
+	generate
+		for (i = 0; i < n; i = i + 1) begin : gen_block
+			// ==== U MEMORY BLOCK FOR COLUMN ====
+			// reg signed [ 31:0] u_write_data;
+			// reg 	   [ 20:0] u_write_addr;
+			// reg 	   [ 20:0] u_read_addr;
+			// reg 	           u_write_sig;
+			// wire signed [31:0] u_read_data;
+
+			// M10K_512_18 u(  
+			// 	.q				(u_read_data),		// the return data value during reads
+			// 	.d				(u_write_data), 	// set to data we want to write
+			// 	.write_address	(u_write_addr), 	// send it the address we want to write
+			// 	.read_address	(u_read_addr),   	// addr we want to read
+			// 	.we				(u_write_sig), 		// if we want to write we = 1'd1, else, we = 1'd0
+			// 	.clk			(clk) );
+			
+			wire data_sig = col_select[i];
+			wire x = i;
+			wire y = row_select;
+			reg  [5:0] state = 0;
+
+			always @(posedge CLOCK_50) begin
+
+				if (data_sig == 1) begin
+					vga_out_base_address + {22'b0, x} + ({22'b0, y} * 640); 
+				end
+				else if (state == 5'd1) begin
+					vga_sram_write  <= 1'b0;   // done writing to the VGA
+					return_sig[i]	<= 1'd1;
+					state           <= 5'd0;
+				end
+			end
+		end
+	endgenerate
 
 	//=======================================================
 	//  Structural coding
