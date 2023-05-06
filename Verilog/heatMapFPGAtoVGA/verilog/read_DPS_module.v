@@ -1,19 +1,19 @@
-module read_DPS_module (clock, reset, sram_readdata, sram_writedata, sram_address, 
-                        sram_write, vga_sram_writedata, vga_sram_address, vga_sram_write, flag,
-                        col_select, return_sig, row_select
+module read_DPS_module (clock, reset, 
+                        sram_readdata, sram_writedata, sram_address, sram_write, 
+                        flag, col_select, return_sig, row_select
 );
-    input             clock, reset;
-    input wire [31:0] sram_readdata;
+    input clock, reset;
 
-    output reg  [ 7:0] vga_sram_writedata;
-    output reg         vga_sram_write;
-    output reg  	   sram_write;
-    output reg  [7 :0] sram_address;
-    output reg  [31:0] sram_writedata;
-    output reg  [31:0] vga_sram_address;
+    output reg 	   sram_write;
+    output reg [7 :0] sram_address;
+    output reg [31:0] sram_writedata;
+    output reg [31:0] vga_sram_address;
+    
+    input wire [31:0] sram_readdata;
 
     output reg [99:0] col_select = 0; // one [] per column
 	output reg [9:0]  row_select = 0; // says which row number
+
     input  reg [99:0] return_sig = 0; // one [] per column
 	
     // y   =    0 : 479 (9  bits ->  512    ) 12 bits
@@ -26,7 +26,7 @@ module read_DPS_module (clock, reset, sram_readdata, sram_writedata, sram_addres
     reg  [ 9:0] x, y;
     reg  [ 7:0] data;
     reg  [ 8:0] count;  // total possitble 256 values in M10K block
-    reg  [ 8:0] vals;   // also 256
+    reg  [ 8:0] vals;   // # of values that were sent over
 
     output reg flag = 0;
     
@@ -37,8 +37,7 @@ module read_DPS_module (clock, reset, sram_readdata, sram_writedata, sram_addres
 	    // ---------------- RESET ----------------------
 		if (reset) begin
 			state          <= 0;
-			vga_sram_write <= 1'b0; // set to on if a write operation to bus
-			sram_write     <= 1'b0;
+			sram_write     <= 0;
             count          <= 0;
             flag           <= 0;
         end
@@ -62,7 +61,7 @@ module read_DPS_module (clock, reset, sram_readdata, sram_writedata, sram_addres
                     state <= 8'd0;     // if (addr 0)==0 try again
                 end
                 else begin
-                    state <= 8'd4;                        // if nonzero, do the add
+                    state <= 8'd4;     // if nonzero, move to read values
                     flag  <= 1'd1;
                 end
             end 
@@ -100,18 +99,25 @@ module read_DPS_module (clock, reset, sram_readdata, sram_writedata, sram_addres
                 state      <= 8'd10;
                 count      <= count + 1;
             end 
+
+            // <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+            // SEND DATA TO CORRECT M10K BLOCK HERE
+            // <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
             if (state == 8'd10) begin
-                // SEND DATA TO CORRECT M10K BLOCK HERE
-                col_select[x] = 1'd1; // one [] per column
-                row_select    = y; // says which row number
+                col_select[x] <= 1'd1; // one [] per column
+                row_select    <= y; // says which row number
                 state <= 8'd11;
             end
-            
             if (state == 8'd11) begin
-                if (return_sig[x] == 1'd1) state <= 8'd12;
+                if (return_sig[x] == 1'd1) begin
+                    col_select[x] <= 0;
+                    state         <= 8'd12;
+                end
                 else state <= 8'd10;
             end
+            // <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
+            // if there are more values go back and keep plotting 
             if (state == 8'd12) begin
                 if (count == vals) state <= 8'd13;
                 else state <= 8'd7;

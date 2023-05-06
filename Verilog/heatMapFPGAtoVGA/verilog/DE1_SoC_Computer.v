@@ -266,12 +266,7 @@ module DE1_SoC_Computer (
 	//=======================================================
 
 	wire			[15: 0]	hex3_hex0;
-	//wire			[15: 0]	hex5_hex4;
 
-	//assign HEX0 = ~hex3_hex0[ 6: 0]; // hex3_hex0[ 6: 0]; 
-	//assign HEX1 = ~hex3_hex0[14: 8];
-	//assign HEX2 = ~hex3_hex0[22:16];
-	//assign HEX3 = ~hex3_hex0[30:24];
 	assign HEX4 = 7'b1111111;
 	assign HEX5 = 7'b1111111;
 
@@ -280,30 +275,36 @@ module DE1_SoC_Computer (
 	HexDigit Digit2(HEX2, hex3_hex0[11:8]);
 	HexDigit Digit3(HEX3, hex3_hex0[15:12]);
 
+	wire sram_clken 		 = 1'b1;
+	wire sram_chipselect = 1'b1;
+
 	//=======================================================
-	// SRAM/VGA state machine
+	// SRAM/HPS data transfer
 	//=======================================================
-	// --Check for sram address=0 nonzero, which means that
-	//   HPS wrote some new data.
-	//
-	// --Read sram address 1 and 2 to get x1, y1 
-	//   left-most x, upper-most y
-	// --Read sram address 3 and 4 to get x2, y2
-	//   right-most x, lower-most y
-	// --Read sram address 5 to get color
-	// --write a rectangle to VGA
-	//
-	// --clear sram address=0 to signal HPS
-	//=======================================================
-	// Controls for Qsys sram slave exported in system module
-	//=======================================================
+	
 	wire [31:0] sram_readdata;
 	reg  [31:0] sram_writedata;
 	reg  [7 :0] sram_address; 
-	reg  		sram_write;
+	reg  				sram_write;
+	
+	reg  flag = 0;
 
-	wire 		sram_clken 		= 1'b1;
-	wire 		sram_chipselect = 1'b1;
+	read_DPS_module readOne(
+		.clock					(CLOCK_50),
+		.reset					(~KEY[0]),
+		.sram_readdata	(sram_readdata),
+		.sram_writedata	(sram_writedata),
+		.sram_address		(sram_address),
+		.sram_write			(sram_write),
+		.flag						(flag),						// flag is just for signalTap 
+		.col_select			(col_select),
+		.return_sig			(return_sig),
+		.row_select			(row_select)
+	);
+
+	reg [n - 1:0] col_select = 0; // lets start with 100 cols (100 pixels)
+	reg [n - 1:0] return_sig = 0; //   			""
+	reg [    9:0] row_select = 0; // says which row number
 
 	//=======================================================
 	// Controls for VGA memory
@@ -312,53 +313,26 @@ module DE1_SoC_Computer (
 	reg  [31:0] vga_sram_address;
 
 	reg  vga_sram_write;
-	wire vga_sram_clken 	= 1'b1;
+	wire vga_sram_clken 		 = 1'b1;
 	wire vga_sram_chipselect = 1'b1;
-	
-	reg  flag = 0;
-
-	read_DPS_module readOne(
-		.clock				(CLOCK_50),
-		.reset				(~KEY[0]),
-		.sram_readdata		(sram_readdata),
-		.sram_writedata		(sram_writedata),
-		.sram_address		(sram_address),
-		.sram_write			(sram_write),
-		.vga_sram_writedata	(vga_sram_writedata),
-		.vga_sram_address	(vga_sram_address),
-		.vga_sram_write		(vga_sram_write),
-		.flag				(flag),
-		.col_select			(col_select),
-		.return_sig			(return_sig),
-		.row_select			(row_select)
-	);
-
-	reg [99:0] col_select = 0; // one [] per column
-	reg [99:0] return_sig = 0; // one [] per column
-	reg [9:0]  row_select = 0; // says which row number
 
 	reg  [ 7:0] pixel_color          =  8'b1111_1111;
-    wire [31:0] vga_out_base_address = 32'h0000_0000;  // vga base addr
+  wire [31:0] vga_out_base_address = 32'h0000_0000;  // vga base addr
 
-	localparam n = 100;
+	// --------------------------------------
+	// GENERATE COLUMNS HERE
+	// --------------------------------------
+	localparam n = 100;	// number of columns
+
+	reg [( n * 32 - 1 ):0] 	vga_addr; 		// n = # of iterators, second [] is length of data (32 bits)
+	reg [( n * 32 - 1 ):0] 	vga_pxl_clr; 	// n = # of iterators, [] is length of data (32 bits)
+
+	reg  [n - 1:0] inter_select; 	// tels us which iterator is ready to be plotted via flag
+	wire [n - 1:0] comp_flag ;		// return to nth iterator to move to next point
+
 	genvar i;
 	generate
 		for (i = 0; i < n; i = i + 1) begin : gen_block
-			// ==== U MEMORY BLOCK FOR COLUMN ====
-			// reg signed [ 31:0] u_write_data;
-			// reg 	   [ 20:0] u_write_addr;
-			// reg 	   [ 20:0] u_read_addr;
-			// reg 	           u_write_sig;
-			// wire signed [31:0] u_read_data;
-
-			// M10K_512_18 u(  
-			// 	.q				(u_read_data),		// the return data value during reads
-			// 	.d				(u_write_data), 	// set to data we want to write
-			// 	.write_address	(u_write_addr), 	// send it the address we want to write
-			// 	.read_address	(u_read_addr),   	// addr we want to read
-			// 	.we				(u_write_sig), 		// if we want to write we = 1'd1, else, we = 1'd0
-			// 	.clk			(clk) );
-			
 			wire data_sig = col_select[i];
 			wire x = i;
 			wire y = row_select;
@@ -366,13 +340,36 @@ module DE1_SoC_Computer (
 
 			always @(posedge CLOCK_50) begin
 
-				if (data_sig == 1) begin
-					vga_out_base_address + {22'b0, x} + ({22'b0, y} * 640); 
+				if (state == 0 && data_sig == 1'd1) begin
+					// compute address to write color too
+					vga_addr   [ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= vga_out_base_address + {22'b0, x} + ({22'b0, y} * 640); 
+					vga_pxl_clr[ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= pixel_color
+					inter_select[i] <= 1'b1;	// tell arbitrer we are ready to plot
+					state <= 6'd1;						// move to state that waits for arbitrer to finish
 				end
-				else if (state == 5'd1) begin
-					vga_sram_write  <= 1'b0;   // done writing to the VGA
-					return_sig[i]	<= 1'd1;
-					state           <= 5'd0;
+				else begin
+					// ===== STATE 1 =====
+					if (state == 6'd1) begin
+						if ( comp_flag[i] == 1'b1 ) begin
+							inter_select[i] <= 1'b0;	// tell arbitrer we are done to plotting
+							state 					<= 6'd2;	// move to draw next point 
+						end
+						else begin
+							state <= 6'd1;
+						end
+					end
+					// ===== STATE 2 =====
+					else if (state == 6'd2) begin
+						return_sig[i]	 <= 1'd1;		// tell HPS reader we finished
+						state          <= 6'd3;
+					end
+					// ===== STATE 3 =====
+					else if (state == 6'd3) begin
+						if (data_sig == 0) begin
+							state <= 6'd0;
+						end
+						state <= 6'd3;
+					end
 				end
 			end
 		end
