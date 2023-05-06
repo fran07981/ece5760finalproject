@@ -1,0 +1,27 @@
+# Compile of test.v was successful with warnings.
+# Compile of column.v was successful.
+# Compile of compute.v was successful.
+# 3 compiles, 0 failed with no errors.
+vsim -gui work.testbench
+# vsim -gui work.testbench 
+# Start time: 15:19:38 on May 06,2023
+# Loading work.testbench
+# Loading work.signed_mult
+# Loading work.build_column
+# Loading work.M10K_256_32
+# Loading work.compute
+add wave  \
+sim:/testbench/node_n
+run
+run -all
+# Compile of test.v was successful with warnings.
+# Compile of column.v was successful.
+# Compile of compute.v was successful.
+# 3 compiles, 0 failed with no errors.
+restart -f
+# Loading work.testbench
+# Loading work.signed_mult
+# Loading work.build_column
+# Loading work.M10K_256_32
+# Loading work.compute
+run -all
