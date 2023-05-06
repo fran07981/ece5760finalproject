@@ -42,7 +42,7 @@ module testbench();
 	assign alpha = 32'b0_0000_1100_1100_1100_0000_0000_0000_000;
 
     wire signed [31:0] delta;	// initial value of delta = 0.1
-	assign delta = 32'b0_0000_0001_1001_1000_0000_0000_0000_0000_0000_000;
+	assign delta = 32'b0_0000_0001_1001_1000_0000_0000_0000_000;
 
 	wire start = 1'd1;
 
@@ -54,20 +54,19 @@ module testbench();
             );
 
 	// Height and Width start indexing at 0
-	reg [31:0] height = 32'd29;
-	reg [31:0] width =  32'd29;
+	reg [7:0] height = 8'd29;
+	reg [7:0] width =  8'd29;
 
 	// OUTPUTS
     wire signed [31:0] node_n   [0:29];	// Amptiude of nodes on current row change with time
 
-	reg [31:0] timer = 32'b0;
 	// Generate 
 	localparam n = 30;
 	genvar i;
 	generate
 		for (i = 0; i < n; i = i + 1) begin : gen_block
 
-			wire [31:0] current_col = i;
+			wire [7:0] current_col = i;
 
 			reg signed [31:0] left_val;
 			reg signed [31:0] right_val;
@@ -79,7 +78,6 @@ module testbench();
 			end
 
 			// Simulate a column x 1 node with zero boundary conditions
-            build_column(clk, reset, current_col, height, width, mult_alpha_delta, node_right, node_left, so_y_coord, si_y_coord, node_center, flag, start);
 			build_column col_one(
 				.clk	 	            (clk_50),			
 				.reset	 	            (reset),
@@ -87,9 +85,9 @@ module testbench();
 				.height		            (height), 
 				.width		            (width), 	// TODO: discuss all together how to get this to a 1
 				.mult_alpha_delta 	    (mult_alpha_delta),
-				.u_right                (right_val), 
-				.u_left	                (left_val), 
-				.u_n		            (u_n[i]),
+				.node_right             (right_val), 
+				.node_left	            (left_val), 
+				.node_center		    (node_n[i]),
 				.flag		            (flag),
 				.start		            (start)
 			);
