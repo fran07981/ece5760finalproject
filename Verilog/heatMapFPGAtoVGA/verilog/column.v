@@ -4,23 +4,25 @@
 // BUILD_COLUMN
 // ------------------------------------------------------------------------------------
 // inputs :
-// 		clk 			in top level has to be CLOCK_50
-// 		reset 			in top level 
-// 		current_col 	tells us which column it is (bit size here is based on the max number of rows we can achieve.)
-// 		height			tells us how tall column is ( same as current col))
-//		width			gives us number of columns we have
-//		alpha 
-// 		delta
-// 		n_reg_right		connected input from other column
-// 		n_reg_left		connected input from other column
-//		so_y_coord		source set val at this height/row number
-//		si_y_coord		sink set val at this height/row number
+// 		clk 				in top level has to be CLOCK_50
+// 		reset 				in top level 
+// 		current_col 		tells us which column it is (bit size here is based on the max number of rows we can achieve.)
+// 		height				tells us how tall column is ( same as current col))
+//		width				gives us number of columns we have
+//		mult_alpha_delta 
+// 		node_right			connected input from other column
+// 		node_left			connected input from other column
+
+// 		start				for synchronization purposes 
+
+// For testing purposes, we set the source of heat at the center of the grid and no sinks. 
 // outputs :
 // 		node_center				becomes the inputs to the other modules
+// 		flag 				to know if one value is calculated 
 
-module build_column(clk, reset, current_col, height, width, mult_alpha_delta, node_right, node_left, so_y_coord, si_y_coord, node_center, flag, start);
-	localparam row_bits = 31; // For consistency, actually shold be ok with 9 bits/n=8
-	localparam col_bits = 31; // 
+module build_column(clk, reset, current_col, height, width, mult_alpha_delta, node_right, node_left, node_center, flag, start, initflag);
+	localparam row_bits = 7; //
+	localparam col_bits = 7; // 
 	
 	// ---- Inputs & Outputs ----
 	input 		 clk, reset;
@@ -35,11 +37,9 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 	input  wire signed [31:0] node_right;
 	input  wire signed [31:0] node_left;
 
-	input  wire signed [31:0] so_y_coord;
-	input  wire signed [31:0] si_y_coord;
-    
 	output wire signed [31:0] node_center;
 	output wire 			  flag;
+	output wire  			  initflag;
 
 	// ---- General Registers ----
 	reg [row_bits:0] bottom_row; // bottom row is 0th row
@@ -59,9 +59,11 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 	reg signed [31:0]  u_reg_center; // saves the current at t=n from prev up from M10K
 
 	reg flag_reg = 0;
+	reg initflag_reg = 0;
 
-	assign node_center 			= (current_row == bottom_row) ? u_reg_bottom : u_reg_center;
+	assign node_center 	= (current_row == bottom_row) ? u_reg_bottom : u_reg_center;
 	assign flag 		= flag_reg;
+	assign initflag 	= initflag_reg;
 
 	// ---- Wires for connecting everything togther ----
 	wire signed [31:0] u_read_data;
@@ -72,7 +74,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 	reg signed [31:0] u_down;	
 	
 	reg signed [31:0] u_center;
-	reg signed [31:0] u_center_prev;
 
 	// ==== U MEMORY BLOCK FOR COLUMN ====
 	reg signed [31:0] u_write_data;
@@ -80,26 +81,12 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 	reg [row_bits:0]  u_read_addr;	// select the row
 	reg 	          u_write_sig;		
 	
-	M10K_512_18 u(  
+	M10K_256_32 u(  
 		.q				(u_read_data),			// the return data value during reads
 		.d				(u_write_data), 	// set to data we want to write
 		.write_address	(u_write_addr), 	// send it the address we want to write
 		.read_address	(u_read_addr),   	// addr we want to read
 		.we				(u_write_sig), 		// if we want to write we = 1'd1, else, we = 1'd0
-		.clk			(clk) );
-
-	// ==== U_PREV MEMORY BLOCK FOR COLUMN ====
-	reg	signed [17:0] u_prev_write_data;
-	reg	[row_bits:0]  u_prev_write_addr;
-	reg	[row_bits:0]  u_prev_read_addr;
-	reg	 	   		  u_prev_write_sig;
-	
-	M10K_256_32 u_prev( 
-		.q				(u_prev_read_data),
-		.d				(u_prev_write_data),
-		.write_address	(u_prev_write_addr), 
-		.read_address	(u_prev_read_addr),
-		.we				(u_prev_write_sig), 
 		.clk			(clk) );
 	
 	// ----------------- SATE MACHINE -----------------
@@ -117,8 +104,8 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 	wire [3:0] state_7 = 4'd7;
 	wire [3:0] state_8 = 4'd8;
 
-	wire signed [17:0] u_next; 
-	reg signed [17:0] temp;
+	wire signed [31:0] u_next; 
+	reg signed [31:0] temp;
 
 	
 	always @(posedge clk) begin
@@ -127,12 +114,13 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		// STATE 0 - reset stage
 		// ------------------------------------------------------------------
 		else if (state == state_0) begin
-			current_row <= 0;		// set the row we are gonna start on to 0
-			bottom_row	<= 0; 		// bottom row is 0th row
-			top_row		<= height;	// top row is gonna be based on the height 
-			left_edge	<= 0;  		// we are at the left edge when our current col is 0
-			right_edge	<= width; 	// set to max number of cols chnged from width
-			state 		<= state_1;
+			current_row 	<= 0;		// set the row we are gonna start on to 0
+			bottom_row		<= 0; 		// bottom row is 0th row
+			top_row			<= height;	// top row is gonna be based on the height 
+			left_edge		<= 0;  		// we are at the left edge when our current col is 0
+			right_edge		<= width; 	// set to max number of cols chnged from width
+			state 			<= state_1;
+			initflag_reg 	<= 1'd0;
 			
 			temp <= fp_0;
 		end
@@ -140,15 +128,10 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		// STATE 1 - tell M10K block's what addr we want to store & to what
 		// ------------------------------------------------------------------
 		else if ( state == state_1 ) begin
-			// M10K block for t = n should  ( TODO: set to triangle vals, Nikitha is working on this step )
+			// M10K block 
 			u_write_addr <= current_row;
 			u_write_data <= temp;
 			u_write_sig  <= 1'd1;
-
-			// M10K block for u_prev is initially the same as u current 
-			u_prev_write_addr <= current_row;
-			u_prev_write_data <= temp;
-			u_prev_write_sig  <= 1'd1;
 
 			if ( current_row == bottom_row ) begin
 				u_reg_bottom <= temp;
@@ -162,24 +145,15 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		else if ( state == state_2 ) begin
 			// ( we gotta give 1 time cycle for the M10K block to write)
 			
-			if (current_row == si_y_coord) begin
-				temp <= 32'b1_0010_0000_0000_0000_0000_0000_0000_000; //Set to -2			
-				current_row <= current_row + 32'd1;
-				state 		<= state_1;				
-			end
-			else if (current_row == so_y_coord) begin
-				temp <= 32'b0_0010_0000_0000_0000_0000_0000_0000_000;		// Set to 2, NEED TO CHECK.
-				current_row <= current_row + 32'd1;
-				state 		<= state_1;				
-			end
-			else if ( current_row == top_row ) begin
+			if ( current_row == top_row ) begin
 				current_row <= 0;
-				temp 		<= fp_0;
-				state 		<= state_3; 			
+				temp 			<= fp_0;
+				state 			<= state_3; 
+				initflag_reg 	<= 1'd1;			
 			end
 			else begin
 				temp <= fp_0;
-				current_row <= current_row + 32'd1;
+				current_row <= current_row + 8'd1;
 				state 		<= state_1;				
 			end
 			
@@ -192,16 +166,13 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 			current_row 	 <= current_row;
 
 			if ( current_row != top_row ) begin
-				u_read_addr 	 <= current_row + 9'd1;
+				u_read_addr 	 <= current_row + 8'd1;
 			end
 			else begin
 				u_read_addr <= 0;
 			end
 			
 			u_write_sig  	 <= 1'd0;
-
-			u_prev_read_addr <= current_row;
-			u_prev_write_sig <= 1'd0;
 
 			state 			 <= state_4;
 		end
@@ -218,7 +189,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 			u_up		  <= (current_row == top_row)    ? 0 : u_read_data;					// if node at top edge, 0 
 			u_down		  <= (current_row == bottom_row) ? 0 : u_reg_down; 				// if node at bottom edge
 			u_center	  <= (current_row == bottom_row) ? u_reg_bottom : u_reg_center; 	// if node is at bottom, grab from bottom register
-			u_center_prev <= u_prev_read_data; // At prev time step, just grab from block
 			
 			state 		  <= state_6;
 		end
@@ -231,10 +201,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 				u_reg_bottom <= u_next;
 				u_reg_down	 <= u_reg_bottom;
 
-				u_prev_write_addr <= current_row;
-				u_prev_write_data <= u_reg_bottom;
-				u_prev_write_sig  <= 1'd1;
-
 				u_reg_center <= u_up;
 
 				u_write_sig  <= 1'd0;
@@ -243,10 +209,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 				u_reg_bottom <= u_reg_bottom;
 				u_reg_down	 <= u_reg_down;
 				u_reg_center <= u_reg_center;
-
-				u_prev_write_addr <= current_row;
-				u_prev_write_data <= u_reg_center;
-				u_prev_write_sig  <= 1'd1;
 
 				u_write_addr <= current_row;
 				u_write_data <= u_next;
@@ -260,10 +222,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 				u_write_sig  <= 1'd1;
 
 				u_reg_center <= u_up;
-
-				u_prev_write_addr <= current_row;
-				u_prev_write_data <= u_reg_center;
-				u_prev_write_sig  <= 1'd1;
 
 				u_reg_down <= u_reg_center;
 			end
@@ -279,11 +237,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 				flag_reg <=1;
 				state <= state_8; 
 			end
-			else if ( current_row == mid ) begin
-				u_mid <= u_reg_center;
-				current_row <= current_row + 1;	
-				state <= state_3; 
-			end
 			else begin
 				current_row <= current_row + 1;	
 				state <= state_3; 
@@ -296,6 +249,7 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		else if ( state == state_8 )begin
 			if ( start == 1'd1 )begin
 				state<=state_3;
+				flag_reg <=0;
 			end
 			else state<=state_8;
 		end
@@ -303,12 +257,12 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 	end
 	
 	compute next_node(
-		.node_center		(),
-		.node_up			(), 
-		.node_down			(), 
-		.node_left			(), 
-		.node_right			(), 
+		.node_center		(u_center),
+		.node_up			(u_up), 
+		.node_down			(u_down), 
+		.node_left			(node_left), 
+		.node_right			(node_right), 
 		.mult_alpha_delta	(mult_alpha_delta), 
-		.new_center			());
+		.new_center			(u_next));
 
 endmodule

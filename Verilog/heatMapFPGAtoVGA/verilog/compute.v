@@ -20,6 +20,11 @@ module compute(node_center, node_up, node_down, node_left, node_right, mult_alph
     wire signed [31:0] n_sum_part_3;
     wire signed [31:0] n_sum_part_4;
 
+    wire signed [31:0] fp_src    = 32'b0_1000_0000_0000_0000_0000_0000_0000_000;	// 8 
+    wire signed [31:0] fp_snk    = 32'b1_1000_0000_0000_0000_0000_0000_0000_000;	// -8
+
+    // Add logic to check for value of source/sink before modifying. 
+
     assign n_sum_part_1 = node_down     - node_center;
     assign n_sum_part_2 = node_left     - node_center;
     assign n_sum_part_3 = node_right    - node_center;
@@ -36,7 +41,7 @@ module compute(node_center, node_up, node_down, node_left, node_right, mult_alph
             .b   (n_sum_result)
             );
 
-    assign new_center = node_center + n_add;
+    assign new_center = node_center != fp_src ? (node_center != fp_snk ? node_center + n_add : node_center) : node_center;
 endmodule
 
 //============================================================
@@ -46,13 +51,13 @@ endmodule
 module signed_mult(out, a, b);
     output  signed [31:0] out;
     input   signed [31:0] a;
-    intput  signed [31:0] b;
+    input  signed [31:0] b;
 
     // intermediate full bit length 
     wire    signed [63:0] mult_out;
     assign mult_out = a*b;
 
-    assign out = {mult_out[63],mult_out[61:30]} 
+    assign out = {mult_out[58],mult_out[57:27]} ;
 endmodule
 
 //============================================================
