@@ -7,14 +7,14 @@ module read_DPS_module (clock, reset,
     output reg 	   sram_write;
     output reg [7 :0] sram_address;
     output reg [31:0] sram_writedata;
-    output reg [31:0] vga_sram_address;
+//    output reg [31:0] vga_sram_address;
     
     input wire [31:0] sram_readdata;
 
     output reg [99:0] col_select = 0; // one [] per column
 	output reg [9:0]  row_select = 0; // says which row number
 
-    input  reg [99:0] return_sig = 0; // one [] per column
+    input   [99:0] return_sig ; // one [] per column
 	
     // y   =    0 : 479 (9  bits ->  512    ) 12 bits
     // x   =    0 : 639 (10 bits -> 1024    ) 12 bits
@@ -30,7 +30,7 @@ module read_DPS_module (clock, reset,
 
     output reg flag = 0;
     
-    reg  [7 :0] state;
+    reg  [7 :0] state = 0;
 
 	always @(posedge clock) begin // CLOCK_50
 

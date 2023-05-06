@@ -302,8 +302,8 @@ module DE1_SoC_Computer (
 		.row_select			(row_select)
 	);
 
-	reg [n - 1:0] col_select = 0; // lets start with 100 cols (100 pixels)
-	reg [n - 1:0] return_sig = 0; //   			""
+	reg [100 - 1:0] col_select = 0; // lets start with 100 cols (100 pixels)
+	reg [100 - 1:0] return_sig = 0; //   			""
 	reg [    9:0] row_select = 0; // says which row number
 
 	//=======================================================
@@ -317,63 +317,70 @@ module DE1_SoC_Computer (
 	wire vga_sram_chipselect = 1'b1;
 
 	reg  [ 7:0] pixel_color          =  8'b1111_1111;
-  wire [31:0] vga_out_base_address = 32'h0000_0000;  // vga base addr
+    wire [31:0] vga_out_base_address = 32'h0000_0000;  // vga base addr
 
 	// --------------------------------------
 	// GENERATE COLUMNS HERE
 	// --------------------------------------
-	localparam n = 100;	// number of columns
+	// localparam n = 100;	// number of columns
 
-	reg [( n * 32 - 1 ):0] 	vga_addr; 		// n = # of iterators, second [] is length of data (32 bits)
-	reg [( n * 32 - 1 ):0] 	vga_pxl_clr; 	// n = # of iterators, [] is length of data (32 bits)
+	// reg [( n * 32 - 1 ):0] 	vga_addr; 		// n = # of iterators, second [] is length of data (32 bits)
+	// reg [( n * 32 - 1 ):0] 	vga_pxl_clr; 	// n = # of iterators, [] is length of data (32 bits)
 
-	reg  [n - 1:0] inter_select; 	// tels us which iterator is ready to be plotted via flag
-	wire [n - 1:0] comp_flag ;		// return to nth iterator to move to next point
+	// reg  [n - 1:0] inter_select; 	// tels us which iterator is ready to be plotted via flag
+	// wire [n - 1:0] comp_flag ;		// return to nth iterator to move to next point
 
-	genvar i;
-	generate
-		for (i = 0; i < n; i = i + 1) begin : gen_block
-			wire data_sig = col_select[i];
-			wire x = i;
-			wire y = row_select;
-			reg  [5:0] state = 0;
+	// genvar i;
+	// generate
+	// 	for (i = 0; i < n; i = i + 1) begin : gen_block
+	// 		wire data_sig = col_select[i];
+	// 		wire [9:0] x;
 
-			always @(posedge CLOCK_50) begin
+	// 		i_to_binary_ew (
+	// 			.i(i),
+	// 			.clk(CLOCK_50),
+	// 			.x(x)
+	// 		);
 
-				if (state == 0 && data_sig == 1'd1) begin
-					// compute address to write color too
-					vga_addr   [ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= vga_out_base_address + {22'b0, x} + ({22'b0, y} * 640); 
-					vga_pxl_clr[ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= pixel_color
-					inter_select[i] <= 1'b1;	// tell arbitrer we are ready to plot
-					state <= 6'd1;						// move to state that waits for arbitrer to finish
-				end
-				else begin
-					// ===== STATE 1 =====
-					if (state == 6'd1) begin
-						if ( comp_flag[i] == 1'b1 ) begin
-							inter_select[i] <= 1'b0;	// tell arbitrer we are done to plotting
-							state 					<= 6'd2;	// move to draw next point 
-						end
-						else begin
-							state <= 6'd1;
-						end
-					end
-					// ===== STATE 2 =====
-					else if (state == 6'd2) begin
-						return_sig[i]	 <= 1'd1;		// tell HPS reader we finished
-						state          <= 6'd3;
-					end
-					// ===== STATE 3 =====
-					else if (state == 6'd3) begin
-						if (data_sig == 0) begin
-							state <= 6'd0;
-						end
-						state <= 6'd3;
-					end
-				end
-			end
-		end
-	endgenerate
+	// 		wire y = row_select;
+	// 		reg  [5:0] state = 0;
+
+	// 		always @(posedge CLOCK_50) begin
+
+	// 			if (state == 0 && data_sig == 1'd1) begin
+	// 				// compute address to write color too
+	// 				vga_addr   [ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= vga_out_base_address + {22'b0, x} + ({22'b0, y} * 640); 
+	// 				vga_pxl_clr[ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= pixel_color;
+	// 				inter_select[i] <= 1'b1;	// tell arbitrer we are ready to plot
+	// 				state <= 6'd1;						// move to state that waits for arbitrer to finish
+	// 			end
+	// 			else begin
+	// 				// ===== STATE 1 =====
+	// 				if (state == 6'd1) begin
+	// 					if ( comp_flag[i] == 1'b1 ) begin
+	// 						inter_select[i] <= 1'b0;	// tell arbitrer we are done to plotting
+	// 						state 					<= 6'd2;	// move to draw next point 
+	// 					end
+	// 					else begin
+	// 						state <= 6'd1;
+	// 					end
+	// 				end
+	// 				// ===== STATE 2 =====
+	// 				else if (state == 6'd2) begin
+	// 					return_sig[i]	 <= 1'd1;		// tell HPS reader we finished
+	// 					state          <= 6'd3;
+	// 				end
+	// 				// ===== STATE 3 =====
+	// 				else if (state == 6'd3) begin
+	// 					if (data_sig == 0) begin
+	// 						state <= 6'd0;
+	// 					end
+	// 					state <= 6'd3;
+	// 				end
+	// 			end
+	// 		end
+	// 	end
+	// endgenerate
 
 	//=======================================================
 	//  Structural coding
@@ -550,23 +557,23 @@ endmodule // end top level
 // http://people.ece.cornell.edu/land/courses/ece5760/DE1_SOC/HDL_style_qts_qii51007.pdf
 //============================================================
 
-module M10K_256_32( 
-    output reg [31:0] q,
-    input [31:0] d,
-    input [7:0] write_address, read_address,
-    input we, clk
-);
-	 // force M10K ram style
-	 // 256 words of 32 bits
-    reg [31:0] mem [255:0]  /* synthesis ramstyle = "no_rw_check, M10K" */;
+// module M10K_256_32( 
+//     output reg [31:0] q,
+//     input [31:0] d,
+//     input [7:0] write_address, read_address,
+//     input we, clk
+// );
+// 	 // force M10K ram style
+// 	 // 256 words of 32 bits
+//     reg [31:0] mem [255:0]  /* synthesis ramstyle = "no_rw_check, M10K" */;
 	 
-    always @ (posedge clk) begin
-        if (we) begin
-            mem[write_address] <= d;
-		  end
-        q <= mem[read_address]; // q doesn't get d in this clock cycle
-    end
-endmodule
-
+//     always @ (posedge clk) begin
+//         if (we) begin
+//             mem[write_address] <= d;
+// 		  end
+//         q <= mem[read_address]; // q doesn't get d in this clock cycle
+//     end
+// endmodule
 
 /// end /////////////////////////////////////////////////////////////////////
+

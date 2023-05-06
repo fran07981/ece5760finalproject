@@ -203,7 +203,7 @@ module arbriter ( vga_addr, vga_pxl_clr, col_select, col_done, clk, comp_flag,
 	assign vga_sram_address   = vga_sram_address_; 
 	assign vga_sram_writedata = vga_sram_writedata_; 
 	assign comp_flag		  = comp_flag_; 
-	assign inter_start 		  = inter_start_;
+	assign inter_start 		  = _start_;
 	//assign hps_done 		  = hps_done_;
 	//assign hps_send_timer 	  = hps_send_timer_;
 	//assign hps_send_done 	  = hps_send_done_;
