@@ -93,7 +93,7 @@ void *readMouseThread(void *arg) {
 					source[sourIt][0] =  x_coord;  
 					source[sourIt][1] =  y_coord;
 
-					printf("Making Source: \n");
+					printf("Making Source: ");
 					for (int j = 0; j < 2; ++j) {
 						printf("%d ", source[sourIt][j]);
 					}
@@ -104,14 +104,15 @@ void *readMouseThread(void *arg) {
 					sink[sinkIt][0] =  x_coord;
 					sink[sinkIt][1] =  y_coord;
 
-					printf("Making Sink: \n");
+					printf("Making Sink: ");
 					for (int j = 0; j < 2; ++j) {
 						printf("%d ", sink[sinkIt][j]);
 					}
-					printf("\n");
+					
 
 					sinkIt = sinkIt + 1;
 				}
+				printf("\n");
 			}
         }
 		usleep(delay);

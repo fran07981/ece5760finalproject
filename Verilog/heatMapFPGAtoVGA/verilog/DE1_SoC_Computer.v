@@ -301,9 +301,11 @@ module DE1_SoC_Computer (
 		.return_sig			(return_sig),
 		.row_select			(row_select)
 	);
+	
+	localparam n = 101;	// number of columns
 
-	reg [100 - 1:0] col_select = 0; // lets start with 100 cols (100 pixels)
-	reg [100 - 1:0] return_sig = 0; //   			""
+	reg [n - 1:0] col_select = 0; // lets start with 100 cols (100 pixels)
+	reg [n - 1:0] return_sig = 0; //   			""
 	reg [    9:0] row_select = 0; // says which row number
 
 	//=======================================================
@@ -322,8 +324,6 @@ module DE1_SoC_Computer (
 	// --------------------------------------
 	// GENERATE COLUMNS HERE
 	// --------------------------------------
-	localparam n = 100;	// number of columns
-
 	reg [( n * 32 - 1 ):0] 	vga_addr; 		// n = # of iterators, second [] is length of data (32 bits)
 	reg [( n * 32 - 1 ):0] 	vga_pxl_clr; 	// n = # of iterators, [] is length of data (32 bits)
 
@@ -332,19 +332,20 @@ module DE1_SoC_Computer (
 	reg  [n - 1:0] inter_done;
 	wire 		inter_start;
 
+
 	genvar i;
 	generate
 		for (i = 0; i < n; i = i + 1) begin : gen_block
 			wire data_sig = col_select[i];
-			wire [9:0] x;
+			// wire [9:0] x;
 
-			i_to_binary_ew (
-				.i(i),
-				.clk(CLOCK_50),
-				.x(x)
-			);
+			// i_to_binary_ew (
+			// 	.i(i),
+			// 	.clk(CLOCK_50),
+			// 	.x(x)
+			// );
 
-			wire y = row_select;
+			// wire y = row_select;
 			reg  [5:0] state = 0;
 
 			
@@ -352,9 +353,8 @@ module DE1_SoC_Computer (
 			always @(posedge CLOCK_50) begin
 
 				if (state == 0 && data_sig == 1'd1) begin
-					// compute address to write color too
-					vga_addr   [ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= vga_out_base_address + {22'b0, x + 10'd100} + ({22'b0, y+ 10'd100} * 640); 
-					vga_pxl_clr[ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= pixel_color;
+					// vga_addr   [ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= vga_out_base_address + {22'b0, x} + ({22'b0, y} * 640); 
+					// vga_pxl_clr[ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= pixel_color;
 					inter_select[i] <= 1'b1;	// tell arbitrer we are ready to plot
 					state <= 6'd1;						// move to state that waits for arbitrer to finish
 				end
@@ -380,7 +380,7 @@ module DE1_SoC_Computer (
 							state <= 6'd0;
 							return_sig[i] <= 1'd0;
 						end
-						state <= 6'd3;
+						else state <= 6'd3;
 					end
 				end
 			end
@@ -388,8 +388,8 @@ module DE1_SoC_Computer (
 	endgenerate
 
 	arbriter genArbri( 
-		.vga_addr			(vga_addr),
-		.vga_pxl_clr		(vga_pxl_clr),
+		.y					(row_select),
+		.vga_pxl_clr		(8'b1111_1111),
 		.inter_select		(inter_select),
 		.inter_done			(inter_done),
 		.clk				(CLOCK_50),
