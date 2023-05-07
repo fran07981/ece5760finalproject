@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <float.h>
+#include <math.h>
 #include <stdint.h>
 #include "VGAHelperFunctions.h"
 #include "sim.h"
@@ -87,11 +88,17 @@ void *readMouseThread(void *arg) {
 			VGA_Hline(0,(int)y_coord,640,white);
 			VGA_Vline((int)x_coord,0,480,white);
 
+			int x_cal = ceil(x_coord / 7) - 1;
+			int y_cal = ceil(y_coord / 7) - 1;
+
+			if (x_cal > 63) x_cal = 63;
+			if (y_cal > 63) y_cal = 63;
+
 			// mark as heat source or sink and send to FPGA
 			if (left_click == 1) {
 				if (source_mode == 1) { 			// SOURCE
-					source[sourIt][0] =  x_coord;  
-					source[sourIt][1] =  y_coord;
+					source[sourIt][0] =  x_cal;  
+					source[sourIt][1] =  y_cal;
 
 					printf("Making Source: ");
 					for (int j = 0; j < 2; ++j) {
@@ -101,8 +108,8 @@ void *readMouseThread(void *arg) {
 					sourIt = sourIt + 1;
 				} 
 				else if (sink_mode == 1 ) {		// SINK
-					sink[sinkIt][0] =  x_coord;
-					sink[sinkIt][1] =  y_coord;
+					sink[sinkIt][0] =  x_cal;
+					sink[sinkIt][1] =  y_cal;
 
 					printf("Making Sink: ");
 					for (int j = 0; j < 2; ++j) {
@@ -150,11 +157,12 @@ void *sendDataThread(void *arg) {
 
 			for (int i = 0; i < sourIt; ++i) {	
 				uint32_t x_coord = source[i][0] << 20;
-				uint32_t y_coord = source[i][1] << 8;
+				uint32_t y_coord = source[i][1] << 8 ;
+
 				uint32_t value   = static_cast<uint8_t>(sourceVal);
 
 				uint32_t sendValue = x_coord | y_coord | value;
-				// printf(" x: %08x y: %08x val: %08x sent: %08x \n", x_coord, y_coord, value, sendValue);
+				printf(" x: %08x y: %08x val: %08x sent: %08x \n", x_coord, y_coord, value, sendValue);
 				*( sram_ptr + i + 2 ) = sendValue;
 			}
 

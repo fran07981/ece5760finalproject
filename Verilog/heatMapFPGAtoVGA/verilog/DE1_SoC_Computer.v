@@ -302,7 +302,7 @@ module DE1_SoC_Computer (
 		.row_select			(row_select)
 	);
 	
-	localparam n = 101;	// number of columns
+	localparam n = 64;	// number of columns
 
 	reg [n - 1:0] col_select = 0; // lets start with 100 cols (100 pixels)
 	reg [n - 1:0] return_sig = 0; //   			""

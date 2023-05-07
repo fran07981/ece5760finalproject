@@ -1045,11 +1045,6 @@ set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[19] -t
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[20] -to "arbriter:genArbri|comp_flag[8]" -section_id auto_signaltap_0
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[21] -to "arbriter:genArbri|comp_flag[9]" -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[20] -to auto_signaltap_0|gnd -section_id auto_signaltap_0
-set_global_assignment -name QIP_FILE Computer_System/synthesis/Computer_System.qip
-set_global_assignment -name VERILOG_FILE DE1_SoC_Computer.v
-set_global_assignment -name SDC_FILE DE1_SoC_Computer.sdc
-set_global_assignment -name VERILOG_FILE hex_decoder.v
-set_global_assignment -name SIGNALTAP_FILE stp2.stp
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[22] -to "arbriter:genArbri|inter_done[0]" -section_id auto_signaltap_0
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[23] -to "arbriter:genArbri|inter_done[10]" -section_id auto_signaltap_0
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[24] -to "arbriter:genArbri|inter_done[11]" -section_id auto_signaltap_0
@@ -4893,5 +4888,10 @@ set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[29] -
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[30] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[31] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
 set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SAMPLE_DEPTH=256" -section_id auto_signaltap_0
+set_global_assignment -name QIP_FILE Computer_System/synthesis/Computer_System.qip
+set_global_assignment -name VERILOG_FILE DE1_SoC_Computer.v
+set_global_assignment -name SDC_FILE DE1_SoC_Computer.sdc
+set_global_assignment -name VERILOG_FILE hex_decoder.v
+set_global_assignment -name SIGNALTAP_FILE stp2.stp
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name SLD_FILE db/stp2_auto_stripped.stp

@@ -3,7 +3,7 @@ module read_DPS_module (clock, reset,
                         flag, col_select, return_sig, row_select
 );
     input clock, reset;
-    localparam n = 101;
+    localparam n = 64;
 
     output reg 	   sram_write;
     output reg [7 :0] sram_address;
