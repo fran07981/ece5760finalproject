@@ -291,6 +291,7 @@ module DE1_SoC_Computer (
 
 	read_DPS_module readOne(
 		.clock					(CLOCK_50),
+		.pixel_color			(pixel_color),
 		.reset					(~KEY[0]),
 		.sram_readdata	(sram_readdata),
 		.sram_writedata	(sram_writedata),
@@ -304,9 +305,9 @@ module DE1_SoC_Computer (
 	
 	localparam n = 64;	// number of columns
 
-	reg [n - 1:0] col_select = 0; // lets start with 100 cols (100 pixels)
-	reg [n - 1:0] return_sig = 0; //   			""
-	reg [    9:0] row_select = 0; // says which row number
+	reg [n - 1:0] col_select; // lets start with 100 cols (100 pixels)
+	reg [n - 1:0] return_sig; //   			""
+	reg [    9:0] row_select; // says which row number
 
 	//=======================================================
 	// Controls for VGA memory
@@ -318,7 +319,7 @@ module DE1_SoC_Computer (
 	wire vga_sram_clken 		 = 1'b1;
 	wire vga_sram_chipselect = 1'b1;
 
-	reg  [ 7:0] pixel_color          =  8'b1111_1111;
+	reg  [ 7:0] pixel_color;
     wire [31:0] vga_out_base_address = 32'h0000_0000;  // vga base addr
 
 	// --------------------------------------
@@ -337,25 +338,12 @@ module DE1_SoC_Computer (
 	generate
 		for (i = 0; i < n; i = i + 1) begin : gen_block
 			wire data_sig = col_select[i];
-			// wire [9:0] x;
-
-			// i_to_binary_ew (
-			// 	.i(i),
-			// 	.clk(CLOCK_50),
-			// 	.x(x)
-			// );
-
-			// wire y = row_select;
 			reg  [5:0] state = 0;
-
-			
 
 			always @(posedge CLOCK_50) begin
 
 				if (state == 0 && data_sig == 1'd1) begin
-					// vga_addr   [ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= vga_out_base_address + {22'b0, x} + ({22'b0, y} * 640); 
-					// vga_pxl_clr[ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= pixel_color;
-					inter_select[i] <= 1'b1;	// tell arbitrer we are ready to plot
+					inter_select[i] <= 1'b1;			// tell arbitrer we are ready to plot
 					state <= 6'd1;						// move to state that waits for arbitrer to finish
 				end
 				else begin
@@ -389,7 +377,7 @@ module DE1_SoC_Computer (
 
 	arbriter genArbri( 
 		.y					(row_select),
-		.vga_pxl_clr		(8'b1111_1111),
+		.vga_pxl_clr		(pixel_color),
 		.inter_select		(inter_select),
 		.inter_done			(inter_done),
 		.clk				(CLOCK_50),
