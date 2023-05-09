@@ -1,4 +1,4 @@
-`include "compute.v"
+
 
 // ------------------------------------------------------------------------------------
 // BUILD_COLUMN
@@ -39,6 +39,7 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 
 	output wire signed [31:0] node_center;
 	output wire 			  flag;
+	wire  			  initflag;
 
 	// ---- General Registers ----
 	reg [row_bits:0] bottom_row; // bottom row is 0th row
@@ -58,9 +59,11 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 	reg signed [31:0]  u_reg_center; // saves the current at t=n from prev up from M10K
 
 	reg flag_reg = 0;
+	reg initflag_reg = 0;
 
 	assign node_center 	= (current_row == bottom_row) ? u_reg_bottom : u_reg_center;
 	assign flag 		= flag_reg;
+	assign initflag 	= initflag_reg;
 
 	// ---- Wires for connecting everything togther ----
 	wire signed [31:0] u_read_data;
@@ -71,7 +74,6 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 	reg signed [31:0] u_down;	
 	
 	reg signed [31:0] u_center;
-	reg signed [31:0] u_center_prev;
 
 	// ==== U MEMORY BLOCK FOR COLUMN ====
 	reg signed [31:0] u_write_data;
@@ -112,13 +114,14 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		// STATE 0 - reset stage
 		// ------------------------------------------------------------------
 		else if (state == state_0) begin
-			current_row <= 0;		// set the row we are gonna start on to 0
-			bottom_row	<= 0; 		// bottom row is 0th row
-			top_row		<= height;	// top row is gonna be based on the height 
-			left_edge	<= 0;  		// we are at the left edge when our current col is 0
-			right_edge	<= width; 	// set to max number of cols chnged from width
-			state 		<= state_1;
-			
+			current_row 	<= 0;		// set the row we are gonna start on to 0
+			bottom_row		<= 0; 		// bottom row is 0th row
+			top_row			<= height;	// top row is gonna be based on the height 
+			left_edge		<= 0;  		// we are at the left edge when our current col is 0
+			right_edge		<= width; 	// set to max number of cols chnged from width
+			state 			<= state_1;
+			initflag_reg 	<= 1'd0;
+			flag_reg <=0;
 			temp <= fp_0;
 		end
 		// ------------------------------------------------------------------
@@ -154,8 +157,9 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 			end
 			else if ( current_row == top_row ) begin
 				current_row <= 0;
-				temp 		<= fp_0;
-				state 		<= state_3; 			
+				temp 			<= fp_0;
+				state 			<= state_3; 
+				initflag_reg 	<= 1'd1;			
 			end
 			else begin
 				temp <= fp_0;
@@ -240,14 +244,12 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		else if (state == state_7) begin
 			if ( current_row == top_row ) begin
 				current_row <= 0;
-				flag_reg <=1;
-				state <= state_8; 
 			end
 			else begin
 				current_row <= current_row + 1;	
-				state <= state_3; 
 			end
-			
+            flag_reg <=1'd1;
+			state <= state_8; 
 		end
 		// ------------------------------------------------------------------
 		// STATE 8 - Wait for the synchronization signal to start next 
@@ -255,6 +257,7 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		else if ( state == state_8 )begin
 			if ( start == 1'd1 )begin
 				state<=state_3;
+				flag_reg <=0;
 			end
 			else state<=state_8;
 		end

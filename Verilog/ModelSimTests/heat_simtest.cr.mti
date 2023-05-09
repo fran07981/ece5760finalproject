@@ -1,17 +1,8 @@
-C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/test.v {2 {vlog -work work -stats=none C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/test.v
+C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/test.v {1 {vlog -work work -stats=none C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/test.v
 Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
--- Compiling module compute
--- Compiling module signed_mult
--- Compiling module M10K_256_32
 -- Compiling module build_column
-** Warning: ** while parsing file included at C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/test.v(2)
-** at compute.v(4): (vlog-2275) 'compute' already exists and will be overwritten.
 -- Compiling module compute
-** Warning: ** while parsing file included at C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/test.v(2)
-** at compute.v(51): (vlog-2275) 'signed_mult' already exists and will be overwritten.
 -- Compiling module signed_mult
-** Warning: ** while parsing file included at C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/test.v(2)
-** at compute.v(74): (vlog-2275) 'M10K_256_32' already exists and will be overwritten.
 -- Compiling module M10K_256_32
 -- Compiling module testbench
 
@@ -27,5 +18,12 @@ Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  
 Top level modules:
 	compute
 	M10K_256_32
+
+} {} {}} C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/column.v {1 {vlog -work work -stats=none C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/column.v
+Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+-- Compiling module build_column
+
+Top level modules:
+	build_column
 
 } {} {}}

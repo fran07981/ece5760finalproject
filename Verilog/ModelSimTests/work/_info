@@ -9,90 +9,90 @@ z2
 cModel Technology
 dC:/programs/intelFPGA/18.1
 vbuild_column
-Z0 !s110 1683400995
+Z0 !s110 1683609437
 !i10b 1
-!s100 ;7`:4]N_TKAb[7LgLj==C0
-I1Qc<`@BE:n2N3W?M7Yj=R3
+!s100 79CZ82dUWUQU;<W5zWT[h2
+IP8;IAZN>N]Rj2BP;63@Ja1
 Z1 VDg1SIo80bB@j0V0VzS_@n1
 Z2 dC:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests
-w1683400989
-8C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/column.v
-FC:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/column.v
+w1683608079
+8column.v
+Fcolumn.v
 L0 23
 Z3 OV;L;10.5b;63
 r1
 !s85 0
 31
-Z4 !s108 1683400995.000000
-!s107 compute.v|C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/column.v|
-!s90 -reportprogress|300|-work|work|-stats=none|C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/column.v|
+Z4 !s108 1683609437.000000
+Z5 !s107 compute.v|column.v|C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/gengridtest.v|
+Z6 !s90 -reportprogress|300|-work|work|-stats=none|C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/gengridtest.v|
 !i113 1
-Z5 o-work work
-Z6 tCvgOpt 0
+Z7 o-work work
+Z8 tCvgOpt 0
 vcompute
 R0
 !i10b 1
 !s100 :YEkPKUmYUQW5bKM[JEA]0
-IL5X7Vnia]>`5zm?JX?R883
+I7oblMc`leATzeXza1h5b53
 R1
 R2
-Z7 w1683399175
-Z8 8C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/compute.v
-Z9 FC:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/compute.v
+Z9 w1683608097
+Z10 8compute.v
+Z11 Fcompute.v
 L0 4
 R3
 r1
 !s85 0
 31
 R4
-Z10 !s107 C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/compute.v|
-Z11 !s90 -reportprogress|300|-work|work|-stats=none|C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/compute.v|
-!i113 1
 R5
 R6
+!i113 1
+R7
+R8
 vM10K_256_32
 R0
 !i10b 1
 !s100 cVOJSglmE>i6179XRZ3Kz0
-I?]mefnQ7B27dQ1aKO[J4k1
+IMX6]YCWk1j;BGTg?Y<Q@A2
 R1
 R2
-R7
-R8
 R9
+R10
+R11
 L0 74
 R3
 r1
 !s85 0
 31
 R4
-R10
-R11
-!i113 1
 R5
 R6
+!i113 1
+R7
+R8
 n@m10@k_256_32
 vsigned_mult
 R0
 !i10b 1
 !s100 @IY^5lSB^_`MO5nMz_hfj0
-IeCKNeG6:RB_T:ofSlf`=l0
+Il3=Jzo5PASQ`9@@Qd53h:2
 R1
 R2
-R7
-R8
 R9
+R10
+R11
 L0 51
 R3
 r1
 !s85 0
 31
 R4
-R10
-R11
-!i113 1
 R5
 R6
+!i113 1
+R7
+R8
 vtestbench
 R0
 !i10b 1
@@ -112,5 +112,26 @@ R4
 !s107 compute.v|column.v|C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/test.v|
 !s90 -reportprogress|300|-work|work|-stats=none|C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/test.v|
 !i113 1
+R7
+R8
+vtestbench2
+R0
+!i10b 1
+!s100 m1KYfV@JK>MGzEYTg2ZN^3
+IlPmcocMLb03?]Xl]Akd:N1
+R1
+R2
+w1683609394
+8C:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/gengridtest.v
+FC:/Users/ns756/Documents/GitHub/ece5760finalproject/Verilog/ModelSimTests/gengridtest.v
+L0 5
+R3
+r1
+!s85 0
+31
+R4
 R5
 R6
+!i113 1
+R7
+R8
