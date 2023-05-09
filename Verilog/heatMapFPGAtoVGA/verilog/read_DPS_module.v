@@ -1,4 +1,4 @@
-`include "compute.v"
+`include "generate_grid.v"
 
 module read_DPS_module (clock, reset, 
                         sram_readdata, sram_writedata, sram_address, sram_write, 
@@ -145,8 +145,8 @@ module read_DPS_module (clock, reset,
             // ===========================================================================
 
             else if (state == 8'd14) begin
-                // if (flag_send == 1'd1) state <= 8'd15;
-                // else state <= 8'd14;
+                if (flag_send == 1'd1) state <= 8'd15;
+                else state <= 8'd14;
                 state <= 8'd15;
                 comp_allow <= 1'd1;
             end
@@ -239,13 +239,15 @@ module read_DPS_module (clock, reset,
     reg [7:0] plot_row = 0;
     reg [7:0] read_counter = 0;
     wire done_write_sig;
-    // wire flag_send;
+    wire flag_send;
 
     reg  unsigned [31:0] read_val;
     wire unsigned [31:0] read_data;
-    reg  unsigned [31:0] write_data;
-    reg           [ 7:0] write_addr;
-    reg           [ 7:0] read_addr;
+
+    wire  unsigned [31:0] write_data;
+    wire           [ 7:0] write_addr;
+    
+    reg            [ 7:0] read_addr;
     reg 	             write_sig;
 
     reg comp_allow;
@@ -268,8 +270,8 @@ module read_DPS_module (clock, reset,
         .write_data (write_data),
         .write_addr (write_addr),
         .comp_allow  (comp_allow),
-        .done_write_sig (done_write_sig)
-        // .flag_send  (flag_send)
+        .done_write_sig (done_write_sig),
+        .flag_send  (flag_send)
     ); // node_n);
 
 endmodule
