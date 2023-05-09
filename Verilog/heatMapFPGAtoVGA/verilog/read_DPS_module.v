@@ -221,7 +221,7 @@ module read_DPS_module (clock, reset,
                 
                 if ( plot_row == 8'd63 ) begin
                     plot_row <= 8'd0;
-                    state <= 8'd27;
+                    state <= 8'd14;     // MOD HERE
                 end
                 else begin
                     plot_row <= plot_row + 8'd1;
@@ -246,7 +246,7 @@ module read_DPS_module (clock, reset,
 
     wire  unsigned [31:0] write_data;
     wire           [ 7:0] write_addr;
-    
+
     reg            [ 7:0] read_addr;
     reg 	             write_sig;
 
