@@ -145,18 +145,20 @@ module read_DPS_module (clock, reset,
             // ===========================================================================
 
             else if (state == 8'd14) begin
-                if (flag_send == 1'd1) state <= 8'd15;
-                else state <= 8'd14;
+                // if (flag_send == 1'd1) state <= 8'd15;
+                // else state <= 8'd14;
+                state <= 8'd15;
+                comp_allow <= 1'd1;
             end
 
             else if (state == 8'd15) begin                
                 write_sig  <= 1'd1;             // TELL GRID TO WRITE, wait until its done
+                comp_allow <= 1'd0;
                 if (done_write_sig == 1'd1) state <= 8'd16;
                 else state <= 8'd15;
             end
             
             else if (state == 8'd16) begin
-                write_sig  <= 1'd0;
                 state <= 8'd17;
             end
 
@@ -237,14 +239,16 @@ module read_DPS_module (clock, reset,
     reg [7:0] plot_row = 0;
     reg [7:0] read_counter = 0;
     wire done_write_sig;
-    wire flag_send;
+    // wire flag_send;
 
     reg  unsigned [31:0] read_val;
     wire unsigned [31:0] read_data;
     reg  unsigned [31:0] write_data;
     reg           [ 7:0] write_addr;
     reg           [ 7:0] read_addr;
-    reg 	             write_sig;		
+    reg 	             write_sig;
+
+    reg comp_allow;
 
     M10K_256_32 mem_com_block(  
         .q				(read_data),			// the return data value during reads
@@ -263,9 +267,9 @@ module read_DPS_module (clock, reset,
         .reset      (reset), 
         .write_data (write_data),
         .write_addr (write_addr),
-        .write_sig  (write_sig),
-        .done_write_sig (done_write_sig),
-        .flag_send  (flag_send)
+        .comp_allow  (comp_allow),
+        .done_write_sig (done_write_sig)
+        // .flag_send  (flag_send)
     ); // node_n);
 
 endmodule
