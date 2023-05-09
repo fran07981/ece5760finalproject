@@ -299,7 +299,8 @@ module DE1_SoC_Computer (
 		.flag						(flag),						// flag is just for signalTap 
 		.col_select			(col_select),
 		.return_sig			(return_sig),
-		.row_select			(row_select)
+		.row_select			(row_select),
+		.pixel_color		(pixel_color)
 	);
 	
 	localparam n = 64;	// number of columns
@@ -318,15 +319,12 @@ module DE1_SoC_Computer (
 	wire vga_sram_clken 		 = 1'b1;
 	wire vga_sram_chipselect = 1'b1;
 
-	reg  [ 7:0] pixel_color          =  8'b1111_1111;
+	reg  [ 7:0] pixel_color;
     wire [31:0] vga_out_base_address = 32'h0000_0000;  // vga base addr
 
 	// --------------------------------------
 	// GENERATE COLUMNS HERE
 	// --------------------------------------
-	reg [( n * 32 - 1 ):0] 	vga_addr; 		// n = # of iterators, second [] is length of data (32 bits)
-	reg [( n * 32 - 1 ):0] 	vga_pxl_clr; 	// n = # of iterators, [] is length of data (32 bits)
-
 	reg  [n - 1:0] inter_select; 	// tels us which iterator is ready to be plotted via flag
 	wire [n - 1:0] comp_flag ;		// return to nth iterator to move to next point
 	reg  [n - 1:0] inter_done;
@@ -353,8 +351,6 @@ module DE1_SoC_Computer (
 			always @(posedge CLOCK_50) begin
 
 				if (state == 0 && data_sig == 1'd1) begin
-					// vga_addr   [ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= vga_out_base_address + {22'b0, x} + ({22'b0, y} * 640); 
-					// vga_pxl_clr[ ((i+1)*32-1) : (((i+1)*32-1) - 31) ] <= pixel_color;
 					inter_select[i] <= 1'b1;	// tell arbitrer we are ready to plot
 					state <= 6'd1;						// move to state that waits for arbitrer to finish
 				end
@@ -389,7 +385,7 @@ module DE1_SoC_Computer (
 
 	arbriter genArbri( 
 		.y					(row_select),
-		.vga_pxl_clr		(8'b1111_1111),
+		.vga_pxl_clr		(pixel_color),
 		.inter_select		(inter_select),
 		.inter_done			(inter_done),
 		.clk				(CLOCK_50),
