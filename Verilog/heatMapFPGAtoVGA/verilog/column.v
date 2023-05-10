@@ -93,16 +93,17 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 	// states 1,2 are for initializing all the memory blocks
 	// states 3,4,5 are for moving data accordingly 
 
-	reg  [3:0] state; 	// 5 states => 3 bits (max of 7 states)
-	wire [3:0] state_0 = 4'd0;
-	wire [3:0] state_1 = 4'd1;
-	wire [3:0] state_2 = 4'd2;
-	wire [3:0] state_3 = 4'd3;
-	wire [3:0] state_4 = 4'd4;
-	wire [3:0] state_5 = 4'd5;
-	wire [3:0] state_6 = 4'd6;
-	wire [3:0] state_7 = 4'd7;
-	wire [3:0] state_8 = 4'd8;
+	reg  [4:0] state; 	// 5 states => 3 bits (max of 7 states)
+	wire [4:0] state_0 = 5'd0;
+	wire [4:0] state_1 = 5'd1;
+	wire [4:0] state_2 = 5'd2;
+	wire [4:0] state_3 = 5'd3;
+	wire [4:0] state_4 = 5'd4;
+	wire [4:0] state_5 = 5'd5;
+	wire [4:0] state_6 = 5'd6;
+	wire [4:0] state_7 = 5'd7;
+	wire [4:0] state_8 = 5'd8;
+	wire [4:0] state_9 = 5'd9;
 
 	wire signed [31:0] u_next; 
 	reg signed [31:0] temp;
@@ -145,18 +146,18 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		else if ( state == state_2 ) begin
 			// ( we gotta give 1 time cycle for the M10K block to write)
 			
-			// if (current_row == height>>1 && current_col == height>>1) begin
-			if (current_row == 8'd3 && current_col == height>>1) begin
+			if (current_row == height>>1 && current_col == height>>1) begin
+			// if (current_row == 8'd3 && current_col == height>>1) begin
 				temp <= 32'b0_1000_0000_0000_0000_0000_0000_0000_000; //Set to 8 middle of grid is the source 		
 				current_row <= current_row + 8'd1;
 				state 		<= state_1;				
 			end
-			// else if (current_row == 8'd7 && current_col == height>>1) begin
-			// 	temp <= -32'sb0_1000_0000_0000_0000_0000_0000_0000_000; //Set to 8 middle of grid is the source 		
-			// 	current_row <= current_row + 8'd1;
-			// 	state 		<= state_1;				
-			// end
-			else if ( current_row == top_row ) begin
+			else if (current_row == 8'd7 && current_col == 8'd5) begin
+				temp <= -32'sb0_1000_0000_0000_0000_0000_0000_0000_000; //Set to 8 middle of grid is the source 		
+				current_row <= current_row + 8'd1;
+				state 		<= state_1;				
+			end
+			if ( current_row == top_row ) begin
 				current_row <= 0;
 				temp 			<= fp_0;
 				state 			<= state_3; 
@@ -167,13 +168,23 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 				current_row <= current_row + 8'd1;
 				state 		<= state_1;				
 			end
-			
 		end
+
+
+		// ------------------------------------------------------------------
+		else if ( state == state_3 ) begin 
+			if ( start == 1'd1 ) begin
+				state    <= state_4;
+				flag_reg <= 0;
+			end
+			else state <= state_3;
+		end
+
 
 		// ------------------------------------------------------------------
 		// STATE 3 - request M10K block memory 
 		// ------------------------------------------------------------------
-		else if ( state == state_3 )begin
+		else if ( state == state_4 )begin
 			current_row 	 <= current_row;
 
 			if ( current_row != top_row ) begin
@@ -185,28 +196,28 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 			
 			u_write_sig  	 <= 1'd0;
 
-			state 			 <= state_4;
+			state 			 <= state_5;
 		end
 		// ------------------------------------------------------------------
 		// STATE 4 - receive memory from M10K & set inputs for compute
 		// ------------------------------------------------------------------
-		else if ( state == state_4 ) begin
-			state <= state_5;
+		else if ( state == state_5 ) begin
+			state <= state_6;
 		end
 		// ------------------------------------------------------------------
 		// STATE 5 - wait for compute moduleeee
 		// ------------------------------------------------------------------
-		else if ( state == state_5 ) begin
+		else if ( state == state_6 ) begin
 			u_up		  <= (current_row == top_row)    ? 0 : u_read_data;					// if node at top edge, 0 
 			u_down		  <= (current_row == bottom_row) ? 0 : u_reg_down; 				// if node at bottom edge
 			u_center	  <= (current_row == bottom_row) ? u_reg_bottom : u_reg_center; 	// if node is at bottom, grab from bottom register
 			
-			state 		  <= state_6;
+			state 		  <= state_7;
 		end
 		// ------------------------------------------------------------------
 		// STATE 6 - compute is done, refer to diagram
 		// ------------------------------------------------------------------
-		else if ( state == state_6 ) begin
+		else if ( state == state_7 ) begin
 
 			if ( current_row == bottom_row ) begin
 				u_reg_bottom <= u_next;
@@ -237,30 +248,26 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 				u_reg_down <= u_reg_center;
 			end
 			
-			state <= state_7; // wait a cycle to perform write into M10K
+			state <= state_8; // wait a cycle to perform write into M10K
 		end
 		// ------------------------------------------------------------------
 		// STATE 7 - move to next node while M10K Blocks write
 		// ------------------------------------------------------------------
-		else if (state == state_7) begin
+		else if (state == state_8) begin
 			if ( current_row == top_row ) begin
 				current_row <= 0;
 			end
 			else begin
 				current_row <= current_row + 1;	
 			end
-            flag_reg <=1'd1;
-			state <= state_8; 
+            flag_reg <= 1'd1;
+			state 	 <= state_9; 
 		end
 		// ------------------------------------------------------------------
 		// STATE 8 - Wait for the synchronization signal to start next 
 		// ------------------------------------------------------------------
-		else if ( state == state_8 )begin
-			if ( start == 1'd1 )begin
-				state<=state_3;
-				flag_reg <=0;
-			end
-			else state<=state_8;
+		else if ( state == state_9 )begin
+			state <= state_3;
 		end
 
 	end

@@ -145,97 +145,99 @@ module read_DPS_module (clock, reset, button,
             // ===========================================================================
             // ===========================================================================
 
+
+            // Read from the HPS 1 heat value
+            // per row
+
+            //      tell column to start
             else if (state == 8'd14) begin
-                if (flag_send == 1'd1) state <= 8'd15;
-                else state <= 8'd14;
-                //state <= 8'd15;
-                comp_allow <= 1'd1;
-                
+                start <= 1'd1;
+                state <= 8'd15;
+            end
+            else if (state == 8'd15) begin
+                start <= 1'd0;
+                if (flag_send == 1'd1) begin
+                    state      <= 8'd16;
+                    comp_allow <= 1'd1;
+                end
+                else state <= 8'd15;                
             end
 
-            else if (state == 8'd15) begin                
+            //      tell grid write to M10K
+            else if (state == 8'd16) begin                
                 write_sig  <= 1'd1;             // TELL GRID TO WRITE, wait until its done
                 comp_allow <= 1'd0;
-                if (done_write_sig == 1'd1) state <= 8'd16;
-                else state <= 8'd15;
+                if (done_write_sig == 1'd1) state <= 8'd17;
+                else state <= 8'd16;
             end
             
-            else if (state == 8'd16) begin
-                state <= 8'd17;
-            end
-
             else if (state == 8'd17) begin
                 state <= 8'd18;
             end
 
             else if (state == 8'd18) begin
-                write_sig  <= 1'd0;
                 state <= 8'd19;
             end
+
             else if (state == 8'd19) begin
+                write_sig  <= 1'd0;
                 state <= 8'd20;
+            end
+            else if (state == 8'd20) begin
+                state <= 8'd21;
                 
                 read_counter <= 0;              // go to each of these columns (for 1 row)
             end
             
-            
-            // READ THE DATA
-
-            else if (state == 8'd20) begin
-                read_addr <= read_counter;
-                state <= 8'd21;
-            end
+            //      we read M10K and plot it 
             else if (state == 8'd21) begin
+                read_addr <= read_counter;
                 state <= 8'd22;
             end
             else if (state == 8'd22) begin
-                read_val <= read_data;
                 state <= 8'd23;
+            end
+            else if (state == 8'd23) begin
+                read_val <= read_data;
+                state <= 8'd24;
             end
             
             // PLOT THE DATA
 
-            else if (state == 8'd23) begin
+            else if (state == 8'd24) begin
                 col_select[read_counter] <= 1'd1; // one [] per column
                 row_select               <= plot_row; // says which row number
                 pixel_color              <= read_val;
-                state                    <= 8'd24;
+                state                    <= 8'd25;
             end
 
-            else if (state == 8'd24) begin
+            else if (state == 8'd25) begin
                 if (return_sig[read_counter] == 1'd1) begin
                     col_select[read_counter] <= 0;
-                    state                    <= 8'd25;
+                    state                    <= 8'd26;
                 end
-                else state <= 8'd24;
+                else state <= 8'd25;
             end
 
             // MOVE TO NEXT POINT
 
-            else if (state == 8'd25) begin
+            else if (state == 8'd26) begin
                 // if (read_counter == 8'd35) state <= 8'd26;
-                if (read_counter == 8'd63) state <= 8'd26;
+                if (read_counter == 8'd63) state <= 8'd27;
                 else begin
                     read_counter <= read_counter + 8'd1;
-                    state <= 8'd20;
+                    state <= 8'd21;
                 end
             end
 
-            else if (state == 8'd26) begin
-                // if ( button ) begin
-                    if ( plot_row == 8'd63 ) begin
-                        plot_row <= 8'd0;
-                    end
-                    else begin
-                        plot_row <= plot_row + 8'd1;
-                    end
-                    state <= 8'd14;
-                // end
-                // else state <= 8'd26;
-            end
-
             else if (state == 8'd27) begin
-                state <= 8'd27;
+                if ( plot_row == 8'd63 ) begin
+                    plot_row <= 8'd0;
+                end
+                else begin
+                    plot_row <= plot_row + 8'd1;
+                end
+                state <= 8'd14;
             end
 
         end
@@ -257,6 +259,8 @@ module read_DPS_module (clock, reset, button,
 
     reg comp_allow;
 
+    reg start;
+
     M10K_256_32 mem_com_block(  
         .q				(read_data),			// the return data value during reads
         .d				(write_data), 	// set to data we want to write
@@ -276,7 +280,8 @@ module read_DPS_module (clock, reset, button,
         .write_addr (write_addr),
         .comp_allow  (comp_allow),
         .done_write_sig (done_write_sig),
-        .flag_send  (flag_send)
+        .flag_send  (flag_send),
+        .start      (start)
     ); // node_n);
 
 endmodule

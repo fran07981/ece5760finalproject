@@ -1,7 +1,7 @@
 `include "column.v"
 
 
-module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_write_sig, flag_send ); // node_n, start);
+module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_write_sig, flag_send, start ); // node_n, start);
 	input clk_50, reset;
 
 	// Drum Dimensions - Height and Width start indexing at 0
@@ -17,7 +17,8 @@ module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_w
 	wire signed [31:0] fp_pink = -32'sb0_0100_0000_0000_0000_0000_0000_0000_000; //pink
 	wire signed [31:0] fp_purple = -32'sb0_0110_0000_0000_0000_0000_0000_0000_000; //purple
 
-	reg start = 0;
+	input start;
+
     output reg flag_send;
 
     wire signed [31:0] alpha;	// initial value of alpha = 0.8
@@ -44,9 +45,9 @@ module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_w
 
     always @ (posedge clk_50) begin
         if ( comp_allow == 1'd1 ) begin
-            state <= 0;
-            done_write_sig <= 0;
-            write_counter <= 8'd0;
+            state           <= 0;
+            done_write_sig  <= 0;
+            write_counter   <= 8'd0;
         end
         else begin
             if (state == 0) begin
@@ -93,10 +94,8 @@ module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_w
             
             else if (state == 8'd4) begin
                 if ( write_counter == 8'd63 ) begin
-                // if ( write_counter == 8'd31 ) begin
                     write_counter <=  8'd0;
                     state <= 8'd5;
-                    start <= 1'd1;
                     done_write_sig <= 1'd1;
                 end
                 else begin
@@ -107,7 +106,6 @@ module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_w
             
             else if (state == 8'd5 ) begin
                 state <= 8'd5;
-                start <= 1'd0;
                 done_write_sig <= 0;
             end
         end
@@ -117,12 +115,9 @@ module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_w
 
     // OUTPUTS
     wire signed [31:0] node_n   [0:63];	// Amptiude of nodes on current row change with time
-    // wire signed [31:0] node_n;
 
     reg done_reg;
     
-    // ====================================================================================================
-    // ====================================================================================================
     // ====================================================================================================
     //	Generate 
     localparam n = 63;
@@ -162,8 +157,6 @@ module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_w
         end
     endgenerate
 
-
-    // ====================================================================================================
     // ====================================================================================================
 endmodule
 
