@@ -175,7 +175,7 @@ module read_DPS_module (clock, reset, button,
             else if (state == 8'd19) begin
                 state <= 8'd20;
                 
-                read_counter <= 8'd31; // 0;              // go to each of these columns (for 1 row)
+                read_counter <= 0;              // go to each of these columns (for 1 row)
             end
             
             
@@ -213,8 +213,8 @@ module read_DPS_module (clock, reset, button,
             // MOVE TO NEXT POINT
 
             else if (state == 8'd25) begin
-                if (read_counter == 8'd31) state <= 8'd26;
-                // if (read_counter == 8'd63) state <= 8'd26;
+                // if (read_counter == 8'd35) state <= 8'd26;
+                if (read_counter == 8'd63) state <= 8'd26;
                 else begin
                     read_counter <= read_counter + 8'd1;
                     state <= 8'd20;
@@ -222,7 +222,7 @@ module read_DPS_module (clock, reset, button,
             end
 
             else if (state == 8'd26) begin
-                if ( button ) begin
+                // if ( button ) begin
                     if ( plot_row == 8'd63 ) begin
                         plot_row <= 8'd0;
                     end
@@ -230,8 +230,8 @@ module read_DPS_module (clock, reset, button,
                         plot_row <= plot_row + 8'd1;
                     end
                     state <= 8'd14;
-                end
-                else state <= 8'd26;
+                // end
+                // else state <= 8'd26;
             end
 
             else if (state == 8'd27) begin
