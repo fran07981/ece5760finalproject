@@ -21,7 +21,7 @@ module compute(node_center, node_up, node_down, node_left, node_right, mult_alph
     wire signed [31:0] n_sum_part_4;
 
     wire signed [31:0] fp_src    = 32'b0_1000_0000_0000_0000_0000_0000_0000_000;	// 8 
-    wire signed [31:0] fp_snk    = 32'b1_1000_0000_0000_0000_0000_0000_0000_000;	// -8
+    wire signed [31:0] fp_snk    = -32'sb0_1000_0000_0000_0000_0000_0000_0000_000;	// -8
 
     // Add logic to check for value of source/sink before modifying. 
 

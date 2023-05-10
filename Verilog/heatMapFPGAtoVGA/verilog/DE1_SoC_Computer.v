@@ -292,6 +292,7 @@ module DE1_SoC_Computer (
 	read_DPS_module readOne(
 		.clock					(CLOCK_50),
 		.reset					(~KEY[0]),
+		.button					(~KEY[1]),
 		.sram_readdata	(sram_readdata),
 		.sram_writedata	(sram_writedata),
 		.sram_address		(sram_address),

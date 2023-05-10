@@ -1,10 +1,10 @@
 `include "generate_grid.v"
 
-module read_DPS_module (clock, reset, 
+module read_DPS_module (clock, reset, button,  
                         sram_readdata, sram_writedata, sram_address, sram_write, 
                         flag, col_select, return_sig, row_select, pixel_color
 );
-    input clock, reset;
+    input clock, reset, button;
     localparam n = 64;
 
     output reg 	   sram_write;
@@ -137,6 +137,7 @@ module read_DPS_module (clock, reset,
                 state           <=  8'd14;
                 plot_row        <= 0;
                 flag  <= 1'd1;
+                
             end
             // ===========================================================================
             // ===========================================================================
@@ -147,8 +148,9 @@ module read_DPS_module (clock, reset,
             else if (state == 8'd14) begin
                 if (flag_send == 1'd1) state <= 8'd15;
                 else state <= 8'd14;
-                state <= 8'd15;
+                //state <= 8'd15;
                 comp_allow <= 1'd1;
+                
             end
 
             else if (state == 8'd15) begin                
@@ -173,7 +175,7 @@ module read_DPS_module (clock, reset,
             else if (state == 8'd19) begin
                 state <= 8'd20;
                 
-                read_counter <= 0;
+                read_counter <= 8'd31; // 0;              // go to each of these columns (for 1 row)
             end
             
             
@@ -196,9 +198,10 @@ module read_DPS_module (clock, reset,
             else if (state == 8'd23) begin
                 col_select[read_counter] <= 1'd1; // one [] per column
                 row_select               <= plot_row; // says which row number
-                pixel_color              <= read_data;
+                pixel_color              <= read_val;
                 state                    <= 8'd24;
             end
+
             else if (state == 8'd24) begin
                 if (return_sig[read_counter] == 1'd1) begin
                     col_select[read_counter] <= 0;
@@ -210,7 +213,8 @@ module read_DPS_module (clock, reset,
             // MOVE TO NEXT POINT
 
             else if (state == 8'd25) begin
-                if (read_counter == 8'd63) state <= 8'd26;
+                if (read_counter == 8'd31) state <= 8'd26;
+                // if (read_counter == 8'd63) state <= 8'd26;
                 else begin
                     read_counter <= read_counter + 8'd1;
                     state <= 8'd20;
@@ -218,15 +222,16 @@ module read_DPS_module (clock, reset,
             end
 
             else if (state == 8'd26) begin
-                
-                if ( plot_row == 8'd63 ) begin
-                    plot_row <= 8'd0;
-                    state <= 8'd14;     // MOD HERE
-                end
-                else begin
-                    plot_row <= plot_row + 8'd1;
+                if ( button ) begin
+                    if ( plot_row == 8'd63 ) begin
+                        plot_row <= 8'd0;
+                    end
+                    else begin
+                        plot_row <= plot_row + 8'd1;
+                    end
                     state <= 8'd14;
                 end
+                else state <= 8'd26;
             end
 
             else if (state == 8'd27) begin

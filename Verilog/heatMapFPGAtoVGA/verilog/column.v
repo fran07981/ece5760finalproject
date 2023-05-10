@@ -145,16 +145,17 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		else if ( state == state_2 ) begin
 			// ( we gotta give 1 time cycle for the M10K block to write)
 			
-			if (current_row == height>>1 && current_col == height>>1) begin
+			// if (current_row == height>>1 && current_col == height>>1) begin
+			if (current_row == 8'd3 && current_col == height>>1) begin
 				temp <= 32'b0_1000_0000_0000_0000_0000_0000_0000_000; //Set to 8 middle of grid is the source 		
 				current_row <= current_row + 8'd1;
 				state 		<= state_1;				
 			end
-			else if (current_row == 8'd7 && current_col == height>>1) begin
-				temp <= 32'b1_1000_0000_0000_0000_0000_0000_0000_000; //Set to 8 middle of grid is the source 		
-				current_row <= current_row + 8'd1;
-				state 		<= state_1;				
-			end
+			// else if (current_row == 8'd7 && current_col == height>>1) begin
+			// 	temp <= -32'sb0_1000_0000_0000_0000_0000_0000_0000_000; //Set to 8 middle of grid is the source 		
+			// 	current_row <= current_row + 8'd1;
+			// 	state 		<= state_1;				
+			// end
 			else if ( current_row == top_row ) begin
 				current_row <= 0;
 				temp 			<= fp_0;
