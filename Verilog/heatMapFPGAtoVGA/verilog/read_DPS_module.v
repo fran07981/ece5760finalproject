@@ -51,6 +51,7 @@ module read_DPS_module (clock, reset, button,
                 sram_address <= 8'd0;
                 sram_write   <= 1'b0;
                 state        <= 8'd1;
+                start        <= 1'd0;
             end
             else if (state == 8'd1) begin
                 state <= 8'd2;
@@ -222,7 +223,6 @@ module read_DPS_module (clock, reset, button,
             // MOVE TO NEXT POINT
 
             else if (state == 8'd26) begin
-                // if (read_counter == 8'd35) state <= 8'd26;
                 if (read_counter == 8'd63) state <= 8'd27;
                 else begin
                     read_counter <= read_counter + 8'd1;

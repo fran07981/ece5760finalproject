@@ -1,5 +1,5 @@
 Restore Archived Project report for DE1_SoC_Computer
-Wed May 10 00:53:17 2023
+Wed May 10 01:40:56 2023
 Quartus Prime Version 18.1.0 Build 625 09/12/2018 SJ Lite Edition
 
 
@@ -36,7 +36,7 @@ refer to the applicable agreement for further details.
 +-------------------------------------------------------------------------+
 ; Restore Archived Project Summary                                        ;
 +---------------------------------+---------------------------------------+
-; Restore Archived Project Status ; Successful - Wed May 10 00:53:17 2023 ;
+; Restore Archived Project Status ; Successful - Wed May 10 01:40:56 2023 ;
 ; Revision Name                   ; DE1_SoC_Computer                      ;
 ; Top-level Entity Name           ; DE1_SoC_Computer                      ;
 ; Family                          ; Cyclone V                             ;
@@ -50,8 +50,8 @@ Info: Successfully restored 'C:/Users/gb438/Desktop/ece5760finalproject/Verilog/
 Info: Generated report 'DE1_SoC_Computer.restore.rpt'
 Info (23030): Evaluation of Tcl script c:/programs/intelfpga/18.1/quartus/common/tcl/apps/qpm/qar.tcl was successful
 Info: Quartus Prime Shell was successful. 0 errors, 316 warnings
-    Info: Peak virtual memory: 4876 megabytes
-    Info: Processing ended: Wed May 10 00:53:18 2023
+    Info: Peak virtual memory: 4885 megabytes
+    Info: Processing ended: Wed May 10 01:40:56 2023
     Info: Elapsed time: 00:00:08
     Info: Total CPU time (on all processors): 00:00:08
 

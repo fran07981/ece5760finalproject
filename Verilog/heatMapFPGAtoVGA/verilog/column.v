@@ -93,7 +93,7 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 	// states 1,2 are for initializing all the memory blocks
 	// states 3,4,5 are for moving data accordingly 
 
-	reg  [4:0] state; 	// 5 states => 3 bits (max of 7 states)
+	reg  [4:0] state = 0; 	// 5 states => 3 bits (max of 7 states)
 	wire [4:0] state_0 = 5'd0;
 	wire [4:0] state_1 = 5'd1;
 	wire [4:0] state_2 = 5'd2;
@@ -152,12 +152,12 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 				current_row <= current_row + 8'd1;
 				state 		<= state_1;				
 			end
-			else if (current_row == 8'd7 && current_col == 8'd5) begin
-				temp <= -32'sb0_1000_0000_0000_0000_0000_0000_0000_000; //Set to 8 middle of grid is the source 		
-				current_row <= current_row + 8'd1;
-				state 		<= state_1;				
-			end
-			if ( current_row == top_row ) begin
+			// else if (current_row == 8'd7 && current_col == 8'd5) begin
+			// 	temp <= -32'sb0_1000_0000_0000_0000_0000_0000_0000_000; //Set to 8 middle of grid is the source 		
+			// 	current_row <= current_row + 8'd1;
+			// 	state 		<= state_1;				
+			// end
+			else if ( current_row == top_row ) begin
 				current_row <= 0;
 				temp 			<= fp_0;
 				state 			<= state_3; 
