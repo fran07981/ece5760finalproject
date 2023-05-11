@@ -20,7 +20,7 @@
 // 		node_center				becomes the inputs to the other modules
 // 		flag 				to know if one value is calculated 
 
-module build_column(clk, reset, current_col, height, width, mult_alpha_delta, node_right, node_left, node_center, flag, start);
+module build_column(clk, reset, current_col, height, width, mult_alpha_delta, node_right, node_left, node_center, flag, start, row_flag);
 	localparam row_bits = 7; //
 	localparam col_bits = 7; // 
 	
@@ -31,6 +31,7 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 	input [col_bits:0] width;
 	input [row_bits:0] height;
 	input start;
+	input [63:0] row_flag;
 
 	input  wire signed [31:0] mult_alpha_delta;
 
@@ -146,18 +147,18 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		else if ( state == state_2 ) begin
 			// ( we gotta give 1 time cycle for the M10K block to write)
 			
-			if (current_row == height>>1 && current_col == height>>1) begin
-			// if (current_row == 8'd3 && current_col == height>>1) begin
-				temp <= 32'b0_1000_0000_0000_0000_0000_0000_0000_000; //Set to 8 middle of grid is the source 		
-				current_row <= current_row + 8'd1;
-				state 		<= state_1;				
-			end
+			// if (current_row == height>>1 && current_col == height>>1) begin
+			// // if (current_row == 8'd3 && current_col == height>>1) begin
+			// 	temp <= 32'b0_1000_0000_0000_0000_0000_0000_0000_000; //Set to 8 middle of grid is the source 		
+			// 	current_row <= current_row + 8'd1;
+			// 	state 		<= state_1;				
+			// end
 			// else if (current_row == 8'd7 && current_col == 8'd5) begin
 			// 	temp <= -32'sb0_1000_0000_0000_0000_0000_0000_0000_000; //Set to 8 middle of grid is the source 		
 			// 	current_row <= current_row + 8'd1;
 			// 	state 		<= state_1;				
 			// end
-			else if ( current_row == top_row ) begin
+			if ( current_row == top_row ) begin
 				current_row <= 0;
 				temp 			<= fp_0;
 				state 			<= state_3; 
@@ -210,8 +211,9 @@ module build_column(clk, reset, current_col, height, width, mult_alpha_delta, no
 		else if ( state == state_6 ) begin
 			u_up		  <= (current_row == top_row)    ? 0 : u_read_data;					// if node at top edge, 0 
 			u_down		  <= (current_row == bottom_row) ? 0 : u_reg_down; 				// if node at bottom edge
-			u_center	  <= (current_row == bottom_row) ? u_reg_bottom : u_reg_center; 	// if node is at bottom, grab from bottom register
-			
+			//u_center	  <= (current_row == bottom_row) ? u_reg_bottom : u_reg_center; 	// if node is at bottom, grab from bottom register
+			if (row_flag[current_row] == 1'b1) u_center <= 32'b0_0010_0000_0000_0000_0000_0000_0000_000;
+			else u_center	  <= (current_row == bottom_row) ? u_reg_bottom : u_reg_center; 
 			state 		  <= state_7;
 		end
 		// ------------------------------------------------------------------

@@ -28,6 +28,7 @@ module read_DPS_module (clock, reset, button,
 
     reg  [31:0] data_buffer;
     reg  [ 9:0] x, y;
+    reg  [ 9:0] heat_x, heat_y;
     reg  [ 7:0] data;
     reg  [ 8:0] count;  // total possitble 256 values in M10K block
     reg  [ 8:0] vals;   // # of values that were sent over
@@ -52,6 +53,8 @@ module read_DPS_module (clock, reset, button,
                 sram_write   <= 1'b0;
                 state        <= 8'd1;
                 start        <= 1'd0;
+                heat_x <= 10'd70;
+                heat_y <= 10'd0;
             end
             else if (state == 8'd1) begin
                 state <= 8'd2;
@@ -152,6 +155,7 @@ module read_DPS_module (clock, reset, button,
 
             //      tell column to start
             else if (state == 8'd14) begin
+                sram_write <= 1'b0;
                 start <= 1'd1;
                 state <= 8'd15;
             end
@@ -233,12 +237,41 @@ module read_DPS_module (clock, reset, button,
             else if (state == 8'd27) begin
                 if ( plot_row == 8'd63 ) begin
                     plot_row <= 8'd0;
+                    state <= 8'd28;
+                    sram_address <= 8'd2;
+                    sram_write  <= 1'b0;
                 end
                 else begin
                     plot_row <= plot_row + 8'd1;
+                    state <= 8'd14;
                 end
-                state <= 8'd14;
+                
             end
+
+            else if (state == 8'd28) begin    // do data-read read
+                state <= 8'd29;
+            end 
+            
+            else if (state == 8'd29)begin
+                state <= 8'd30;
+            end
+            
+            else if (state == 8'd30) begin    // do data-read read
+                data_buffer <= sram_readdata;
+                sram_write  <= 1'b0;
+                state       <= 8'd31;
+            end 
+
+            else if (state == 8'd31) begin    // check if there is data
+                heat_x    <= data_buffer[29:20]; // 10 bits
+                heat_y    <= data_buffer[17: 8]; // 10 bits
+                
+                sram_address    <=  8'd0;   // signal the HPS we are done
+                sram_writedata  <= 32'b0;
+                sram_write      <=  1'b1;
+                
+                state <= 8'd14;
+            end 
 
         end
 	end
@@ -281,7 +314,9 @@ module read_DPS_module (clock, reset, button,
         .comp_allow  (comp_allow),
         .done_write_sig (done_write_sig),
         .flag_send  (flag_send),
-        .start      (start)
+        .start      (start),
+        .heat_x     (heat_x),
+        .heat_y     (heat_y)
     ); // node_n);
 
 endmodule

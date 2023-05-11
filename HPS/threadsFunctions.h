@@ -40,7 +40,7 @@ void *readMouseThread(void *arg) {
 	unsigned char white = 0b11111111;
 	unsigned char black = 0b00000000;
 
-	printf("entering mouse thread \n");
+	// printf("entering mouse thread \n");
     int fd2, bytes_mouse;
     unsigned char data[3];
     const char *pDevice = "/dev/input/mice";
@@ -63,6 +63,22 @@ void *readMouseThread(void *arg) {
 	allocateGridResources();
 
     while (1) {
+		char time_string[20];
+		
+		sprintf(time_string, "ECE 5760");
+		VGA_text (60, 10, time_string);
+
+		sprintf(time_string, "Final Project");
+		VGA_text (60, 15, time_string);
+
+		
+		sprintf(time_string, "Heat Simulation");
+		VGA_text (60, 20, time_string);
+
+		
+		sprintf(time_string, "by Nikitha, Guadalupe, and Franny");
+		VGA_text (20, 58, time_string);
+
 		bytes_mouse = read(fd2, data, sizeof(data));
 
         if(bytes_mouse > 0)
@@ -96,30 +112,41 @@ void *readMouseThread(void *arg) {
 
 			// mark as heat source or sink and send to FPGA
 			if (left_click == 1) {
-				if (source_mode == 1) { 			// SOURCE
-					source[sourIt][0] =  x_cal;  
-					source[sourIt][1] =  y_cal;
+				
+				// source[sourIt][0] =  x_cal;  
+				// source[sourIt][1] =  y_cal;
 
-					printf("Making Source: ");
-					for (int j = 0; j < 2; ++j) {
-						printf("%d ", source[sourIt][j]);
-					}
+				// printf("Making Source: ");
+				// for (int j = 0; j < 2; ++j) {
+				// 	printf("%d ", source[sourIt][j]);
+				// }
 
-					sourIt = sourIt + 1;
-				} 
-				else if (sink_mode == 1 ) {		// SINK
-					sink[sinkIt][0] =  x_cal;
-					sink[sinkIt][1] =  y_cal;
+				// sourIt = sourIt + 1;
 
-					printf("Making Sink: ");
-					for (int j = 0; j < 2; ++j) {
-						printf("%d ", sink[sinkIt][j]);
-					}
-					
+				printf("Injecting heat at point = ");
+				uint16_t sourceVal =  10;
 
-					sinkIt = sinkIt + 1;
-				}
-				printf("\n");
+				uint32_t x_coord = x_cal << 20;
+				uint32_t y_coord = y_cal << 8 ;
+
+				uint32_t value   = static_cast<uint8_t>(sourceVal);
+
+				uint32_t sendValue = x_coord | y_coord | value;
+				printf(" x: %d y: %d \n", x_cal, y_cal);
+				*( sram_ptr + 2 ) = sendValue;
+				uint32_t num = 1;
+				*( sram_ptr + 1) = num;	// tell FPGA how many sources we have
+				*( sram_ptr ) 	 = 1; 		// "data-ready" flag
+				while (*(sram_ptr)==1);		// wait for FPGA to zero the "data_ready" flag
+
+				x_coord = 70 << 20;
+				y_coord = 0 << 8 ;
+				value   = static_cast<uint8_t>(sourceVal);
+				sendValue = x_coord | y_coord | value;
+				*( sram_ptr + 2 ) = sendValue;
+				*( sram_ptr + 1) = num;	// tell FPGA how many sources we have
+				*( sram_ptr ) 	 = 1; 		// "data-ready" flag
+				while (*(sram_ptr)==1);		// wait for FPGA to zero the "data_ready" flag
 			}
         }
 		usleep(delay);
@@ -127,7 +154,7 @@ void *readMouseThread(void *arg) {
 }
 
 void *sendDataThread(void *arg) {
-	printf("entering data send thread\n");
+	// printf("entering data send thread\n");
 	int count = 0;
     while(1) 
 	{
@@ -171,26 +198,8 @@ void *sendDataThread(void *arg) {
 			// x: b500000 y: e900 val: a sent: b50e90a = 0B5|0E9|0A 
 			
 			//----------------------------------------------------------------
-			// printf("  Adding sink: ");
-			// for (int i = 0; i < sourIt; ++i) {
-			// 	for (int j = 0; j < 2; ++j) {
-			// 		printf("    %d ", sink[i][j]);
-			// 	}
-			// 	printf("\n");
-			// }
+			uint32_t num = sourIt;
 
-			for (int i = 0; i < sinkIt; ++i) {	
-				uint32_t x_coord = sink[i][0] << 20;
-				uint32_t y_coord = sink[i][1] << 8;
-				uint32_t value   = static_cast<uint8_t>(sinkVal);
-
-				uint32_t sendValue = x_coord | y_coord | value;
-
-				*( sram_ptr + i + 2 + sourIt) = sendValue;
-			}
-			
-			//----------------------------------------------------------------
-			uint32_t num = sinkIt + sourIt;
 			*( sram_ptr + 1) = num;	// tell FPGA how many sources we have
 			*( sram_ptr ) 	 = 1; 		// "data-ready" flag
 			while (*(sram_ptr)==1);		// wait for FPGA to zero the "data_ready" flag
@@ -202,7 +211,7 @@ void *sendDataThread(void *arg) {
 }
 
 void *readKeyboardThread(void *arg) {
-	printf("entering keyboard thread\n");
+	// printf("entering keyboard thread\n");
     fcntl(STDIN_FILENO, F_SETFL, (int)fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
 	fd_set read_message;
 
@@ -261,7 +270,7 @@ void *readKeyboardThread(void *arg) {
 }
 
 void *plotHeatThread(void *arg) {
-	printf("entering plot thread\n");
+	// printf("entering plot thread\n");
 	// set up grid & initial values
 	grid_size = 100;
     allocateResources();

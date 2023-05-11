@@ -1,16 +1,16 @@
-Fitter Status : Successful - Wed May 10 02:21:28 2023
+Fitter Status : Successful - Thu May 11 02:02:18 2023
 Quartus Prime Version : 18.1.0 Build 625 09/12/2018 SJ Lite Edition
 Revision Name : DE1_SoC_Computer
 Top-level Entity Name : DE1_SoC_Computer
 Family : Cyclone V
 Device : 5CSEMA5F31C6
 Timing Models : Final
-Logic utilization (in ALMs) : 25,790 / 32,070 ( 80 % )
-Total registers : 23750
+Logic utilization (in ALMs) : 30,671 / 32,070 ( 96 % )
+Total registers : 29267
 Total pins : 368 / 457 ( 81 % )
 Total virtual pins : 0
-Total block memory bits : 3,096,960 / 4,065,280 ( 76 % )
-Total RAM Blocks : 382 / 397 ( 96 % )
+Total block memory bits : 3,139,968 / 4,065,280 ( 77 % )
+Total RAM Blocks : 386 / 397 ( 97 % )
 Total DSP Blocks : 87 / 87 ( 100 % )
 Total HSSI RX PCSs : 0
 Total HSSI PMA RX Deserializers : 0

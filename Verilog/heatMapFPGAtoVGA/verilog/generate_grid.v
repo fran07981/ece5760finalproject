@@ -1,7 +1,7 @@
 `include "column.v"
 
 
-module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_write_sig, flag_send, start ); // node_n, start);
+module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_write_sig, flag_send, start, heat_x, heat_y ); // node_n, start);
 	input clk_50, reset;
 
 	// Drum Dimensions - Height and Width start indexing at 0
@@ -9,15 +9,27 @@ module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_w
 	reg  [7:0] width  = 8'd63;
 	
 	// Constants
-	wire signed [31:0] fp_0    = 32'b0_0000_0000_0000_0000_0000_0000_0000_000;	// 0 
-	wire signed [31:0] fp_red  = 32'b0_0110_0000_0000_0000_0000_0000_0000_000;	// red
-	wire signed [31:0] fp_orange = 32'b0_0100_0000_0000_0000_0000_0000_0000_000; //orange
-	wire signed [31:0] fp_gold = 32'b0_0010_0000_0000_0000_0000_0000_0000_000;
-	wire signed [31:0] fp_cyan = -32'sb0_0010_0000_0000_0000_0000_0000_0000_000; //cyanblue
-	wire signed [31:0] fp_pink = -32'sb0_0100_0000_0000_0000_0000_0000_0000_000; //pink
-	wire signed [31:0] fp_purple = -32'sb0_0110_0000_0000_0000_0000_0000_0000_000; //purple
+	wire signed [31:0] fp_0 =   32'b0_0000_0000_0000_0000_0000_0000_0000_000;
+	wire signed [31:0] fp_1 =   32'b0_1000_0000_0000_0000_0000_0000_0000_000;	
+	wire signed [31:0] fp_2 =   32'b0_0100_0000_0000_0000_0000_0000_0000_000; 
+	wire signed [31:0] fp_3 =   32'b0_0010_0000_0000_0000_0000_0000_0000_000;
+    wire signed [31:0] fp_4 =   32'b0_0001_0000_0000_0000_0000_0000_0000_000;	
+	wire signed [31:0] fp_5 =   32'b0_0000_1000_0000_0000_0000_0000_0000_000; 
+	wire signed [31:0] fp_6 =   32'b0_0000_0100_0000_0000_0000_0000_0000_000;
+    wire signed [31:0] fp_7 =   32'b0_0000_0010_0000_0000_0000_0000_0000_000;	
+	wire signed [31:0] fp_8 =   32'b0_0000_0001_0000_0000_0000_0000_0000_000; 
+	wire signed [31:0] fp_9 =   32'b0_0000_0000_1000_0000_0000_0000_0000_000;
+    wire signed [31:0] fp_10 =   32'b0_0000_0000_0100_0000_0000_0000_0000_000;	
+	wire signed [31:0] fp_11 =   32'b0_0000_0000_0010_0000_0000_0000_0000_000; 
+	wire signed [31:0] fp_12 =   32'b0_0000_0000_0001_0000_0000_0000_0000_000;
+
+	wire signed [31:0] fp_13 = -32'sb0_0001_0000_0000_0000_0000_0000_0000_000; 
+	wire signed [31:0] fp_14 = -32'sb0_0010_0000_0000_0000_0000_0000_0000_000; 
+	wire signed [31:0] fp_15 = -32'sb0_1000_0000_0000_0000_0000_0000_0000_000;
+    
 
 	input start;
+    input [9:0] heat_x, heat_y;
 
     output reg flag_send;
 
@@ -56,28 +68,60 @@ module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_w
 
             else if (state == 8'd1) begin
                 
-                if (node_n[write_counter] >= fp_red)  begin // >6
+                if (node_n[write_counter] == fp_1)  begin // ==8
                     write_data <= 8'b111_000_00; //red
                 end
-                else if (node_n[write_counter] >= fp_orange) begin // >4
-                    write_data <= 8'b_111_010_00 ; //orange
+                else if (node_n[write_counter] == fp_15)  begin // == -8
+                    write_data <= 8'b000_000_11; //blue
                 end
-                else if (node_n[write_counter] >= fp_gold)  begin  // >2
-                    write_data <= 8'b_110_011_01 ; //marigold??
+                else if (node_n[write_counter] == fp_0)  begin // == -8
+                    write_data <= 8'b111_111_11; //black
                 end
-                else if (node_n[write_counter] > fp_0) begin // >0
-                    write_data <= 8'b111_110_00 ; //pink
+                else if (node_n[write_counter] >= fp_2) begin 
+                    write_data <= 8'b110_000_00;
                 end
-                else if (node_n[write_counter] == fp_0)  begin // >-2
-                    write_data <= 8'b_011_101_11 ; // cyan-blue ish
+                else if (node_n[write_counter] >= fp_3)  begin  
+                    write_data <= 8'b_111_010_00;
                 end
-                else if (node_n[write_counter] >= fp_pink)  begin // >-4
-                    write_data <= 8'b_000_000_00; //black
+                else if (node_n[write_counter] > fp_4) begin 
+                    write_data <= 8'b_111_011_00;
                 end
-                else if (node_n[write_counter] >= fp_purple) begin // >-6
-                    write_data <= 8'b111_000_11 ; //purple 
-                end else begin //<=-6
-                    write_data <= 8'b_1111_1111 ; //black
+                else if (node_n[write_counter] == fp_5)  begin 
+                    write_data <= 8'b_111_110_00 ;
+                end
+                else if (node_n[write_counter] >= fp_6)  begin 
+                    write_data <= 8'b_111_111_00 ; 
+                end
+               
+                else if (node_n[write_counter] >= fp_7) begin 
+                    write_data <= 8'b_110_111_00 ; 
+                end
+                 //
+                 else if (node_n[write_counter] >= fp_8) begin 
+                    write_data <= 8'b_110_011_00 ;
+                end
+                 else if (node_n[write_counter] >= fp_9) begin 
+                    write_data <= 8'b_110_101_00 ;
+                end
+                 else if (node_n[write_counter] >= fp_10) begin 
+                    write_data <= 8'b_110_110_00 ;
+                end
+                 else if (node_n[write_counter] >= fp_11) begin 
+                    write_data <= 8'b_001_111_00 ; 
+                end
+                 else if (node_n[write_counter] >= fp_12) begin 
+                    write_data <= 8'b_010_111_00 ;
+                end
+                //
+                // start negative
+                 else if (node_n[write_counter] >= fp_13) begin 
+                    write_data <= 8'b_011_101_01 ;  
+                end
+                 else if (node_n[write_counter] >= fp_14) begin 
+                    write_data <= 8'b_011_101_11 ; 
+                 end
+                else begin 
+                    write_data <= 8'b011_010_11 ; 
                 end
 
                 write_addr <= write_counter;
@@ -130,11 +174,15 @@ module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_w
             reg signed [31:0] left_val;
             reg signed [31:0] right_val;
             wire temp;
+            reg [63:0] row_flag = 0;
 
             always @ (posedge clk_50) begin
                 left_val  <= (i == 0)     ? 0 : node_n[ i - 1 ];
                 right_val <= (i == 63) ? 0 : node_n[ i + 1 ];
                 if ( i == 0 ) flag_send <= temp;
+                if (i == heat_x) row_flag[heat_y] = 1;
+                else row_flag = 0;
+
             end
 
             // unsure on how we are setting this up
@@ -152,7 +200,8 @@ module generate_grid ( clk_50, reset, write_data, write_addr, comp_allow, done_w
                 .node_left	    	(left_val), 
                 .node_center		(node_n[i]),
                 .flag		    	(temp),		// tells us when we are done with calculating and waiting for next to start
-                .start		 		(start)   // When initialization is done, i.e entire grid to 0s
+                .start		 		(start),   // When initialization is done, i.e entire grid to 0s
+                .row_flag           (row_flag)
             );
         end
     endgenerate
